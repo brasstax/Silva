@@ -10,13 +10,12 @@ config = ConfigParser()
 config.read('config.ini')
 
 with open(config['default']['discord_token']) as fp:
-    TOKEN = fp.read()
+    TOKEN = fp.read().strip()
 COMMAND_PREFIX = config['default']['command_prefix']
 
 bot = commands.Bot(
     command_prefix=COMMAND_PREFIX,
     description="The best sniper in Phantagarde...or possibly all the gardes.")
-
 
 
 @bot.event
