@@ -119,4 +119,4 @@ dmypy.json
 secrets/
 
 # SQlite database
-ffrkbot.sqlite3
+aliases.sqlite3
