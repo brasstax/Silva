@@ -30,12 +30,12 @@ class SilvaCmds(commands.Cog, name="Silva commands"):
                 if word not in aliases.keys():
                     aliases[word]: list = []
                 aliases[word].append(alias)
-                logging.info(f"{word}, {aliases[word]}")
             for word, alias in aliases.items():
                 choice = random.choice(alias)
                 text = text.replace(word.lower(), choice)
                 text = text.replace(word.capitalize(), choice)
             await ctx.send(text)
+            logging.info(f'{ctx.message.author} called for song')
         except Exception as e:
             logging.warning(f'Could not get cat fact: {e}')
             await ctx.send("I couldn't get a fact at this time, sorry!")
