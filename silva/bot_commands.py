@@ -58,7 +58,7 @@ class SilvaCmds(commands.Cog, name="Silva commands"):
         msg = '__CURRENT EVENTS__\n'
         for event in current_events:
             event_text = (
-                f"`{event['title']}` ({event['url']})\n"
+                f"_{event['title']}_ ({event['url']})\n"
                 f"ends {event['finish']}\n"
                 "\n"
             )
@@ -66,7 +66,7 @@ class SilvaCmds(commands.Cog, name="Silva commands"):
         msg += '__FUTURE EVENTS__\n'
         for event in future_events:
             event_text = (
-                f"`{event['title']}` ({event['url']})\n"
+                f"_{event['title']}_ ({event['url']})\n"
                 f"{event['duration']}\n"
             )
             msg += str(event_text)
