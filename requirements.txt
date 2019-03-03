@@ -5,3 +5,5 @@ git+https://github.com/Rapptz/discord.py@f6869242ca11577e04d036ae74e00a82d94fb37
 multidict==4.5.2
 websockets==6.0
 configparser==3.7.1
+requests==2.21.0
+beautifulsoup4==4.7.1
