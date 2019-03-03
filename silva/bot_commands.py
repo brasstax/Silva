@@ -6,6 +6,7 @@ import random
 from silva.utilities import gbfwiki
 
 
+
 class SilvaCmds(commands.Cog, name="Silva commands"):
     def __init__(self, bot):
         self.bot = bot
