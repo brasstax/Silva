@@ -15,7 +15,8 @@ class SilvaCmds(commands.Cog, name="Silva commands"):
         bot = self.bot
         try:
             fact = requests.get(
-                'http://www.pycatfacts.com/catfacts.txt?sfw=true')
+                'http://www.pycatfacts.com/catfacts.txt?sfw=true',
+                timeout=10)
             text = fact.text
             cmd: str = '''
             SELECT word, alias, is_proper_noun FROM aliases;
