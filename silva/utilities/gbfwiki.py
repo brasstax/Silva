@@ -20,7 +20,11 @@ class wiki:
             'action': 'parse',
             'page': 'Main Page',
             'format': 'json'}
-        res: requests.models.Response = requests.get(self.url, params=params)
+        headers: dict = {
+            'User-Agent':
+                'Granblue SA Silva Bot (Written by Hail Hydrate#9035)'}
+        res: requests.models.Response = requests.get(
+            self.url, params=params, headers=headers)
         self.soup: BeautifulSoup = BeautifulSoup(
             res.json()['parse']['text']['*'],
             features='html.parser')
