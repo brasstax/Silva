@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 import logging
 from discord.ext import commands
+from discord import Embed
 import requests
 import random
 from silva.utilities import gbfwiki
-
 
 
 class SilvaCmds(commands.Cog, name="Silva commands"):
@@ -55,19 +55,24 @@ class SilvaCmds(commands.Cog, name="Silva commands"):
         wiki = gbfwiki.wiki()
         current_events = wiki.get_current_events()
         future_events = wiki.get_upcoming_events()
-        msg = '__CURRENT EVENTS__\n'
+        msg = Embed(title='Granblue Fantasy Events', url='https://gbf.wiki')
+        # We're not actually putting spaces in the value field,
+        # but Unicode U+2800. This is so we can create fake not-titles
+        # to divide our sections, but since we can't actually put a blank
+        # or normal space in the value without Discord complaining, we resort
+        # to a hack.
+        msg.add_field(name='Current Events', value='⠀', inline=False)
         for event in current_events:
-            event_text = (
-                f"_{event['title']}_ ({event['url']})\n"
-                f"ends {event['finish']}\n"
-                "\n"
+            msg.add_field(
+                name=f"[{event['title']}]({event['url']})",
+                value=f"Ends on {event['finish']}",
+                inline=False
             )
-            msg += str(event_text)
-        msg += '__FUTURE EVENTS__\n'
+        msg.add_field(name='Upcoming Events', value='⠀', inline=False)
         for event in future_events:
-            event_text = (
-                f"_{event['title']}_ ({event['url']})\n"
-                f"{event['duration']}\n"
+            msg.add_field(
+                name=f"[{event['title']}]({event['url']})",
+                value=f"{event['duration']}",
+                inline=False
             )
-            msg += str(event_text)
-        await ctx.send(msg)
+        await ctx.send(embed=msg)
