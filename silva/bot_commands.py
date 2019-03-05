@@ -12,8 +12,8 @@ class SilvaCmds(commands.Cog, name="Silva commands"):
         self.bot = bot
         logging.info('Bot Initialized.')
 
-    @commands.command()
-    async def song(self, ctx, aliases=['tweyen']):
+    @commands.command(name='song', aliases=['tweyen'])
+    async def song(self, ctx):
         '''
         Gets a fact about Song. Or Tweyen. Depends on Silva's mood.
         '''
