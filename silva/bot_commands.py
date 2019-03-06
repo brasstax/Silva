@@ -2,7 +2,7 @@
 import logging
 from discord.ext import commands
 from discord import Embed
-import requests
+import aiohttp
 import random
 from silva.utilities import gbfwiki
 
@@ -19,10 +19,11 @@ class SilvaCmds(commands.Cog, name="Silva commands"):
         '''
         bot = self.bot
         try:
-            fact = requests.get(
-                'http://www.pycatfacts.com/catfacts.txt?sfw=true',
-                timeout=10)
-            text = fact.text
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    'http://www.pycatfacts.com/catfacts.txt?sfw=true',
+                        timeout=10) as fact:
+                    text = await fact.text()
             cmd: str = '''
             SELECT word, alias, is_proper_noun FROM aliases;
             '''
