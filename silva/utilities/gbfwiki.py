@@ -6,7 +6,6 @@ import aiohttp
 from bs4 import element
 from copy import copy
 from typing import List
-import json
 
 
 async def init_wiki():
@@ -22,16 +21,21 @@ async def init_wiki():
 class Wiki:
     def __init__(self):
         self.base_url = 'https://gbf.wiki'
-        self.url = 'https://tinyurl.com/y2bgrxj6'
+        self.url = f'{self.base_url}/api.php'
 
     async def _init(self):
         self.soup = await self.get_main_page()
 
     async def get_main_page(self):
         params: dict = {
-            'action': 'parse',
-            'page': 'Main Page',
-            'format': 'json'}
+            'action': 'cargoquery',
+            'format': 'json',
+            'tables': 'event_history',
+            'fields':
+                'name, utc_end, utc_start, time_start, time_end, element,'
+                ' wiki_page',
+            'where': '(time_start >= NOW()) OR time_end >= NOW()'
+            }
         headers: dict = {
             'User-Agent':
                 'Granblue SA Silva Bot (Written by Hail Hydrate#9035)',
@@ -40,10 +44,10 @@ class Wiki:
             try:
                 async with session.get(
                         self.url, params=params, headers=headers) as resp:
-                    text = await resp.text()
+                    text = await resp.json()
             except Exception as e:
                 raise(self.UnreachableWikiError(e))
-        json_output = json.loads(text)
+        json_output = text['cargoquery']
         return json_output
 
     def get_events(self):
@@ -57,23 +61,25 @@ class Wiki:
         now: datetime.datetime = datetime.now(pytz.utc)
         for span in soup:
             event: dict = {}
-            event['title'] = span['name']
-            event['start'] = span['time start']
-            event['finish'] = span['time end']
-            event['utc start'] = span['utc start']
-            event['utc end'] = span['utc end']
-            if span['element'] != '':
-                event['element'] = f'({span["element"]})'
+            event['title'] = span['title']['name']
+            event['start'] = span['title']['time start']
+            if span['title']['time end'] != '':
+                event['finish'] = span['title']['time end']
             else:
-                event['element'] = None
-            if span['wiki page'] != '':
-                url = f"{self.base_url}/{span['wiki page']}".replace(
+                event['finish'] = '¯\_(ツ)_/¯'
+            event['utc start'] = span['title']['utc start']
+            event['utc end'] = span['title']['utc end']
+            if span['title']['element'] != '':
+                event['title'] += f" ({span['title']['element']})"
+            if span['title']['wiki page'] != '':
+                url = f"{self.base_url}/{span['title']['wiki page']}".replace(
                     ' ', '_')
                 event['url'] = url
             else:
                 event['url'] = 'No wiki page'
             if datetime.fromtimestamp(
-                    span['utc start']).replace(tzinfo=pytz.utc) <= now:
+                    int(span['title']['utc start'])).replace(
+                        tzinfo=pytz.utc) <= now:
                 events['current'].append(event)
             else:
                 events['upcoming'].append(event)
