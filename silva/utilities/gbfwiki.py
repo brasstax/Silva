@@ -133,12 +133,20 @@ class Wiki:
                 'span', {'data-text-after': 'Event has ended.'}):
             event: dict = {}
             event['title'] = span.parent.parent.a['title']
-            event_parent = span.parent.find('span', {'class': 'tooltiptext'})
-            dates = event_parent.text.split('to')
-            event['start'] = dates[0]
-            event['finish'] = dates[1]
             event['utc start']: int = int(span['data-start'])
             event['utc end']: int = int(span['data-end'])
+            # Change the output of the start and end text date to match the
+            # output of the rest of the event date text.
+            start = datetime.utcfromtimestamp(
+                event['utc start']).replace(tzinfo=pytz.utc)
+            start = start.astimezone(tz=pytz.timezone('Asia/Tokyo'))
+            end = datetime.utcfromtimestamp(
+                event['utc end']).replace(tzinfo=pytz.utc)
+            end = end.astimezone(tz=pytz.timezone('Asia/Tokyo'))
+            event['start'] = datetime.strftime(
+                start, "%Y-%m-%d %H:%M JST")
+            event['finish'] = datetime.strftime(
+                end, "%Y-%m-%d %H:%M JST")
             event['url'] = f"{self.base_url}{span.parent.parent.a['href']}"
             events.append(event)
         return events
