@@ -5,6 +5,7 @@ from discord.ext import commands
 from silva import bot_commands
 import discord
 import sqlite3
+import asyncio
 
 logging.basicConfig(level=logging.INFO)
 
@@ -49,4 +50,12 @@ async def on_ready():
     activity = discord.Game(name=f'{COMMAND_PREFIX}help for help')
     await bot.change_presence(status=discord.Status.online, activity=activity)
 
-bot.run(TOKEN)
+loop = asyncio.get_event_loop()
+try:
+    loop.run_until_complete(bot.login(token=TOKEN))
+    loop.run_until_complete(bot.connect())
+except KeyboardInterrupt:
+    logging.info('Logging out.')
+    loop.run_until_complete(bot.logout())
+finally:
+    loop.close()

@@ -2,7 +2,7 @@
 import logging
 from discord.ext import commands
 from discord import Embed
-import requests
+import aiohttp
 import random
 from silva.utilities import gbfwiki
 
@@ -19,10 +19,11 @@ class SilvaCmds(commands.Cog, name="Silva commands"):
         '''
         bot = self.bot
         try:
-            fact = requests.get(
-                'http://www.pycatfacts.com/catfacts.txt?sfw=true',
-                timeout=10)
-            text = fact.text
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    'http://www.pycatfacts.com/catfacts.txt?sfw=true',
+                        timeout=10) as fact:
+                    text = await fact.text()
             cmd: str = '''
             SELECT word, alias, is_proper_noun FROM aliases;
             '''
@@ -52,9 +53,8 @@ class SilvaCmds(commands.Cog, name="Silva commands"):
         Gets information from gbf.wiki on current and future events.
         '''
         logging.info(f'events requested by {ctx.author}')
-        wiki = gbfwiki.wiki()
-        current_events = wiki.get_current_events()
-        future_events = wiki.get_upcoming_events()
+        wiki = await gbfwiki.init_wiki()
+        events = wiki.get_events()
         msg = Embed(title='Granblue Fantasy Events', url='https://gbf.wiki')
         # We're not actually putting spaces in the value field,
         # but Unicode U+2800. This is so we can create fake not-titles
@@ -62,17 +62,17 @@ class SilvaCmds(commands.Cog, name="Silva commands"):
         # or normal space in the value without Discord complaining, we resort
         # to a hack.
         msg.add_field(name='Current Events', value='⠀', inline=False)
-        for event in current_events:
+        for event in events['current']:
             msg.add_field(
                 name=f"[{event['title']}]({event['url']})",
                 value=f"Ends on {event['finish']}",
                 inline=False
             )
         msg.add_field(name='Upcoming Events', value='⠀', inline=False)
-        for event in future_events:
+        for event in events['upcoming']:
             msg.add_field(
                 name=f"[{event['title']}]({event['url']})",
-                value=f"{event['duration']}",
+                value=f"{event['start']} to {event['finish']}",
                 inline=False
             )
         await ctx.send(embed=msg)

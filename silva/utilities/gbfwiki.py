@@ -1,42 +1,133 @@
 #!/usr/bin/env python
 
-import requests
+import pytz
+from datetime import datetime
+import aiohttp
 from bs4 import BeautifulSoup, element
 from copy import copy
 from typing import List
 
 
-class wiki:
-    def __init__(self, url='https://gbf.wiki'):
-        self.base_url = url
-        self.url = f'{self.base_url}/api.php'
-        try:
-            self.get_main_page()
-        except Exception as e:
-            raise(self.UnreachableWikiError(e))
+async def init_wiki():
+    '''
+    Async-creates the wiki object and sets its .soup to actual JSON.
+    return: gbfwiki.wiki wiki
+    '''
+    wiki = Wiki()
+    await wiki._init()
+    return wiki
 
-    def get_main_page(self):
+
+class Wiki:
+    def __init__(self):
+        self.base_url = 'https://gbf.wiki'
+        self.url = f'{self.base_url}/api.php'
+
+    async def _init(self):
+        self.soup = await self.get_main_page()
+        self.main_page_special = await self.get_main_page_special()
+
+    async def get_main_page(self):
         params: dict = {
-            'action': 'parse',
-            'page': 'Main Page',
-            'format': 'json'}
+            'action': 'cargoquery',
+            'format': 'json',
+            'tables': 'event_history',
+            'fields':
+                'name, utc_end, utc_start, time_start, time_end, element,'
+                ' wiki_page',
+            'where': '(time_start >= NOW()) OR time_end >= NOW()'
+            }
         headers: dict = {
             'User-Agent':
-                'Granblue SA Silva Bot (Written by Hail Hydrate#9035)'}
-        res: requests.models.Response = requests.get(
-            self.url, params=params, headers=headers)
-        self.soup: BeautifulSoup = BeautifulSoup(
-            res.json()['parse']['text']['*'],
-            features='html.parser')
+                'Granblue SA Silva Bot (Written by Hail Hydrate#9035)',
+                'Accept': 'application/json'}
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(
+                        self.url, params=params, headers=headers) as resp:
+                    text = await resp.json()
+            except Exception as e:
+                raise(self.UnreachableWikiError(e))
+        json_output = text['cargoquery']
+        return json_output
 
-    def get_current_events(self):
+    async def get_main_page_special(self):
         '''
-        Scrapes the soup for span elements containing an attribute called
-        'data-text-after' with the phrase 'Event has ended', then retrieves
-        the event's name, start date, end date, and wiki URL.
-        return: list events
+        Retrieves the Special section of the main page.
         '''
-        soup = self.soup
+        params: dict = {
+            'action': 'parse',
+            'format': 'json',
+            'page': 'Template:MainPageSpecial',
+            'prop': 'text'
+        }
+        headers: dict = {
+            'User-Agent':
+                'Granblue SA Silva Bot (Written by Hail Hydrate#9035)',
+                'Accept': 'application/json'}
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(
+                        self.url, params=params, headers=headers) as resp:
+                    text = await resp.json()
+            except Exception as e:
+                raise(self.UnreachableWikiError(e))
+        text_output = text['parse']['text']['*']
+        html_output = BeautifulSoup(text_output, 'html.parser')
+        return html_output
+
+    def get_events(self):
+        '''
+        Scrapes the soup for events and sorts them into upcoming and
+        current events.
+        return: dict events
+        '''
+        soup: dict = self.soup
+        events: dict = {'upcoming': [], 'current': []}
+        now: datetime.datetime = datetime.utcnow().replace(tzinfo=pytz.utc)
+        for span in soup:
+            event: dict = {}
+            event['title'] = span['title']['name']
+            event['start'] = span['title']['time start']
+            if span['title']['time end'] != '':
+                event['finish'] = span['title']['time end']
+            else:
+                event['finish'] = '¯\_(ツ)_/¯'
+            event['utc start'] = int(span['title']['utc start'])
+            event['utc end'] = int(span['title']['utc end'])
+            if span['title']['element'] != '':
+                event['title'] += f" ({span['title']['element']})"
+            if span['title']['wiki page'] != '':
+                url = f"{self.base_url}/{span['title']['wiki page']}".replace(
+                    ' ', '_')
+                event['url'] = url
+            else:
+                event['url'] = 'No wiki page'
+            if datetime.utcfromtimestamp(
+                    int(span['title']['utc start'])).replace(
+                        tzinfo=pytz.utc) <= now:
+                events['current'].append(event)
+            else:
+                events['upcoming'].append(event)
+        special_events = self.get_special_events()
+        for event in special_events:
+            start = datetime.utcfromtimestamp(event['utc start'])
+            start = start.replace(tzinfo=pytz.utc)
+            end = datetime.utcfromtimestamp(event['utc end'])
+            end = end.replace(tzinfo=pytz.utc)
+            if start <= now:
+                if end > now:
+                    events['current'].append(event)
+            else:
+                events['upcoming'].append(event)
+        events['current'] = sorted(
+            events['current'], key=lambda k: k['utc start'])
+        events['upcoming'] = sorted(
+            events['upcoming'], key=lambda k: k['utc start'])
+        return events
+
+    def get_special_events(self) -> List[element.Tag]:
+        soup = self.main_page_special
         events: list = []
         for span in soup.find_all(
                 'span', {'data-text-after': 'Event has ended.'}):
@@ -46,6 +137,8 @@ class wiki:
             dates = event_parent.text.split('to')
             event['start'] = dates[0]
             event['finish'] = dates[1]
+            event['utc start']: int = int(span['data-start'])
+            event['utc end']: int = int(span['data-end'])
             event['url'] = f"{self.base_url}{span.parent.parent.a['href']}"
             events.append(event)
         return events
@@ -54,9 +147,11 @@ class wiki:
         '''
         Scrapes the soup for a elements to identify
         the upcoming events section.
+        Deprecated since we can get JSON output, but remains in case it's
+        needed for a future function.
         return: list events
         '''
-        soup = self.soup
+        soup: List(dict) = self.soup
         future_events = (
             soup.find(text='Upcoming Events')
             .parent.parent.next_sibling.next_sibling)
@@ -70,9 +165,11 @@ class wiki:
                 events[idx] = event.parent
         return events
 
-    def get_upcoming_events(self) -> List[dict]:
+    def get_upcoming_events_by_scraping(self) -> List[dict]:
         '''
         Runs get_upcoming_events_html and returns a list of dictionaries.
+        Deprecated since we can get JSON output, but remains in case it's
+        needed for a future function.
         '''
         html: List[element.Tag] = self.get_upcoming_events_html()
         events: list = []
@@ -95,6 +192,8 @@ class wiki:
         '''
         Checks to see if an upcoming event is properly wrapped in a <p>
         HTML element.
+        Deprecated since we can get JSON output, but remains in case it's
+        needed for a future function.
         '''
         return event.parent.name == 'p'
 
