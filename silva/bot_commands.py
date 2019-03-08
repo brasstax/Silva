@@ -5,8 +5,6 @@ from discord import Embed
 import aiohttp
 import random
 from silva.utilities import gbfwiki
-from datetime import datetime
-from pytz import utc
 
 
 class SilvaCmds(commands.Cog, name="Silva commands"):
@@ -57,18 +55,6 @@ class SilvaCmds(commands.Cog, name="Silva commands"):
         logging.info(f'events requested by {ctx.author}')
         wiki = await gbfwiki.init_wiki()
         events = wiki.get_events()
-        special_events = wiki.get_special_events()
-        now = datetime.utcnow().replace(tzinfo=utc)
-        for event in special_events:
-            start = datetime.utcfromtimestamp(event['utc start'])
-            start = start.replace(tzinfo=utc)
-            end = datetime.utcfromtimestamp(event['utc end'])
-            end = end.replace(tzinfo=utc)
-            if start <= now:
-                if end > now:
-                    events['current'].append(event)
-            else:
-                events['upcoming'].append(event)
         msg = Embed(title='Granblue Fantasy Events', url='https://gbf.wiki')
         # We're not actually putting spaces in the value field,
         # but Unicode U+2800. This is so we can create fake not-titles

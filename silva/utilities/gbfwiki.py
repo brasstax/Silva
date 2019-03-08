@@ -84,7 +84,7 @@ class Wiki:
         '''
         soup: dict = self.soup
         events: dict = {'upcoming': [], 'current': []}
-        now: datetime.datetime = datetime.now(pytz.utc)
+        now: datetime.datetime = datetime.utcnow().replace(tzinfo=pytz.utc)
         for span in soup:
             event: dict = {}
             event['title'] = span['title']['name']
@@ -93,8 +93,8 @@ class Wiki:
                 event['finish'] = span['title']['time end']
             else:
                 event['finish'] = '¯\_(ツ)_/¯'
-            event['utc start'] = span['title']['utc start']
-            event['utc end'] = span['title']['utc end']
+            event['utc start'] = int(span['title']['utc start'])
+            event['utc end'] = int(span['title']['utc end'])
             if span['title']['element'] != '':
                 event['title'] += f" ({span['title']['element']})"
             if span['title']['wiki page'] != '':
@@ -103,12 +103,27 @@ class Wiki:
                 event['url'] = url
             else:
                 event['url'] = 'No wiki page'
-            if datetime.fromtimestamp(
+            if datetime.utcfromtimestamp(
                     int(span['title']['utc start'])).replace(
                         tzinfo=pytz.utc) <= now:
                 events['current'].append(event)
             else:
                 events['upcoming'].append(event)
+        special_events = self.get_special_events()
+        for event in special_events:
+            start = datetime.utcfromtimestamp(event['utc start'])
+            start = start.replace(tzinfo=pytz.utc)
+            end = datetime.utcfromtimestamp(event['utc end'])
+            end = end.replace(tzinfo=pytz.utc)
+            if start <= now:
+                if end > now:
+                    events['current'].append(event)
+            else:
+                events['upcoming'].append(event)
+        events['current'] = sorted(
+            events['current'], key=lambda k: k['utc start'])
+        events['upcoming'] = sorted(
+            events['upcoming'], key=lambda k: k['utc start'])
         return events
 
     def get_special_events(self) -> List[element.Tag]:
