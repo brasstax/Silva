@@ -3,7 +3,7 @@
 import pytz
 from datetime import datetime
 import aiohttp
-from bs4 import element
+from bs4 import BeautifulSoup, element
 from copy import copy
 from typing import List
 
@@ -25,6 +25,7 @@ class Wiki:
 
     async def _init(self):
         self.soup = await self.get_main_page()
+        self.main_page_special = await self.get_main_page_special()
 
     async def get_main_page(self):
         params: dict = {
@@ -49,6 +50,31 @@ class Wiki:
                 raise(self.UnreachableWikiError(e))
         json_output = text['cargoquery']
         return json_output
+
+    async def get_main_page_special(self):
+        '''
+        Retrieves the Special section of the main page.
+        '''
+        params: dict = {
+            'action': 'parse',
+            'format': 'json',
+            'page': 'Template:MainPageSpecial',
+            'prop': 'text'
+        }
+        headers: dict = {
+            'User-Agent':
+                'Granblue SA Silva Bot (Written by Hail Hydrate#9035)',
+                'Accept': 'application/json'}
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(
+                        self.url, params=params, headers=headers) as resp:
+                    text = await resp.json()
+            except Exception as e:
+                raise(self.UnreachableWikiError(e))
+        text_output = text['parse']['text']['*']
+        html_output = BeautifulSoup(text_output, 'html.parser')
+        return html_output
 
     def get_events(self):
         '''
@@ -83,6 +109,23 @@ class Wiki:
                 events['current'].append(event)
             else:
                 events['upcoming'].append(event)
+        return events
+
+    def get_special_events(self) -> List[element.Tag]:
+        soup = self.main_page_special
+        events: list = []
+        for span in soup.find_all(
+                'span', {'data-text-after': 'Event has ended.'}):
+            event: dict = {}
+            event['title'] = span.parent.parent.a['title']
+            event_parent = span.parent.find('span', {'class': 'tooltiptext'})
+            dates = event_parent.text.split('to')
+            event['start'] = dates[0]
+            event['finish'] = dates[1]
+            event['utc start']: int = int(span['data-start'])
+            event['utc end']: int = int(span['data-end'])
+            event['url'] = f"{self.base_url}{span.parent.parent.a['href']}"
+            events.append(event)
         return events
 
     def get_upcoming_events_html(self) -> List[element.Tag]:
