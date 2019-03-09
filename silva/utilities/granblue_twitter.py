@@ -32,7 +32,6 @@ class Twitter(object):
         await client.user
         bot = self.bot
         channel = bot.get_channel(self.channel_id)
-        logging.info(self.follow_id)
         req = client.stream.statuses.filter.post(follow=self.follow_id)
         async with req as stream:
             async for tweet in stream:
@@ -40,7 +39,6 @@ class Twitter(object):
                     sid = tweet.id
                     username = tweet.user.screen_name
                     user_id = tweet.user.id
-                    logging.info(user_id)
                     if user_id not in self.follow_id:
                         logging.info(f'Ignoring retweet from @{username}')
                     else:
