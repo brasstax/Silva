@@ -8,6 +8,9 @@ from discord.ext import commands
 import logging
 from tweepy import Status
 import json
+import re
+from tweepy.error import TweepError
+from tweepy.streaming import ReadBuffer
 
 
 class TwitterAuth(object):
@@ -20,6 +23,42 @@ class TwitterAuth(object):
         self.auth = tweepy.OAuthHandler(consumer, consumer_secret)
         self.auth.set_access_token(access, access_secret)
         self.api = tweepy.API(self.auth)
+
+
+class GranblueStream(tweepy.Stream):
+    async def _data(self, data):
+        if await self.listener.on_data(data) is False:
+            self.running = False
+
+    async def _read_loop(self, resp):
+        charset = resp.headers.get('content-type', default='')
+        enc_search = re.search('charset=(?P<enc>\S*)', charset)
+        if enc_search is not None:
+            encoding = enc_search.group('enc')
+        else:
+            encoding = 'utf-8'
+
+        buf = ReadBuffer(resp.raw, self.chunk_size, encoding=encoding)
+
+        while self.running and not resp.raw.closed:
+            length = 0
+            while not resp.raw.closed:
+                line = buf.read_line()
+                # line is sometimes None so we need to check here
+                stripped_line = line.strip() if line else line
+                if not stripped_line:
+                    # keep-alive new lines are expected
+                    self.listener.keep_alive()
+                elif stripped_line.isdigit():
+                    length = int(stripped_line)
+                    break
+                else:
+                    raise TweepError(
+                        'Expecting length, unexpected value found')
+
+            next_status_obj = buf.read_len(length)
+            if self.running and next_status_obj:
+                await self._data(next_status_obj)
 
 
 class GranblueListener(tweepy.StreamListener):
