@@ -39,9 +39,7 @@ class Twitter(object):
                     sid = tweet.id
                     username = tweet.user.screen_name
                     user_id = tweet.user.id
-                    if user_id not in self.follow_id:
-                        logging.info(f'Ignoring retweet from @{username}')
-                    else:
+                    if user_id in self.follow_id:
                         logging.info(f"@{username}: {tweet.text}")
                         url = f"https://twitter.com/{username}/status/{sid}"
                         logging.info(url)
