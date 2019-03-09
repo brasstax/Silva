@@ -62,6 +62,8 @@ async def on_ready():
     logging.info('------')
     activity = discord.Game(name=f'{COMMAND_PREFIX}help for help')
     await bot.change_presence(status=discord.Status.online, activity=activity)
+    to_follow_str = config['twitter']['twitter_user_id'].split(',')
+    to_follow = [int(item) for item in to_follow_str]
     twitter = granblue_twitter.Twitter(
         bot=bot,
         consumer=twitter_config['default']['api'],
@@ -69,7 +71,7 @@ async def on_ready():
         access=twitter_config['default']['access_token'],
         access_secret=twitter_config['default']['access_token_secret'],
         discord_channel_id=config['twitter']['discord_channel_id'],
-        twitter_user_id=config['twitter']['twitter_user_id'])
+        twitter_user_id=to_follow)
     await twitter.follow()
 
 
