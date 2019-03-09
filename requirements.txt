@@ -7,3 +7,6 @@ websockets==6.0
 configparser==3.7.1
 beautifulsoup4==4.7.1
 pytz==2018.9
+argparse==1.4.0
+peony-twitter==1.1.2
+aiodns==2.0.0
