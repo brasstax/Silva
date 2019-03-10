@@ -5,6 +5,8 @@ from discord import Embed
 import aiohttp
 import random
 from silva.utilities import gbfwiki
+from datetime import datetime
+import pytz
 
 
 class SilvaCmds(commands.Cog, name="Silva commands"):
@@ -76,3 +78,18 @@ class SilvaCmds(commands.Cog, name="Silva commands"):
                 inline=False
             )
         await ctx.send(embed=msg)
+
+    @commands.command(name='jst', aliases=['time'])
+    async def time(self, ctx):
+        '''
+        Sends the current time, in JST, to a channel.
+        '''
+        logging.info(f'time requested by {ctx.author}')
+        now = datetime.utcnow().replace(tzinfo=pytz.utc)
+        jst = now.astimezone(tz=pytz.timezone('Asia/Tokyo'))
+        jst_str = datetime.strftime(
+            jst,
+            '%-H:%M:%S, %A, %B %-d, %Y JST'
+        )
+        msg = f"It's currently {jst_str}."
+        await ctx.send(msg)
