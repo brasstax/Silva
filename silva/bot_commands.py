@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import logging
 from discord.ext import commands
-from discord import Embed
+from discord import Embed, Colour
 import aiohttp
 import random
 from silva.utilities import gbfwiki
@@ -57,27 +57,34 @@ class SilvaCmds(commands.Cog, name="Silva commands"):
         logging.info(f'events requested by {ctx.author}')
         wiki = await gbfwiki.init_wiki()
         events = wiki.get_events()
-        msg = Embed(title='Granblue Fantasy Events', url='https://gbf.wiki')
-        # We're not actually putting spaces in the value field,
-        # but Unicode U+2800. This is so we can create fake not-titles
-        # to divide our sections, but since we can't actually put a blank
-        # or normal space in the value without Discord complaining, we resort
-        # to a hack.
-        msg.add_field(name='Current Events', value='⠀', inline=False)
+        msg_current = Embed(
+            title='Granblue Fantasy Current Events',
+            url='https://gbf.wiki',
+            color=Colour.teal())
         for event in events['current']:
-            msg.add_field(
+            msg_current.add_field(
                 name=f"[{event['title']}]({event['url']})",
                 value=f"Ends on {event['finish']}",
                 inline=False
             )
-        msg.add_field(name='Upcoming Events', value='⠀', inline=False)
+        msg_upcoming = Embed(
+            title='Granblue Fantasy Upcoming Events',
+            url='https://gbf.wiki',
+            color=Colour.dark_purple())
         for event in events['upcoming']:
-            msg.add_field(
+            msg_upcoming.add_field(
                 name=f"[{event['title']}]({event['url']})",
                 value=f"{event['start']} to {event['finish']}",
                 inline=False
             )
-        await ctx.send(embed=msg)
+        # send to a dedicated event channel
+        events_channel = self.bot.get_channel(self.bot.events_channel)
+        await events_channel.send(embed=msg_current)
+        await events_channel.send(embed=msg_upcoming)
+        mention_msg = (
+            f'Hi {ctx.author.mention}! I posted the current and'
+            f' upcoming events in {events_channel.mention}.')
+        await ctx.send(mention_msg)
 
     @commands.command(name='jst', aliases=['time'])
     async def time(self, ctx):

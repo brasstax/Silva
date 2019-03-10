@@ -30,6 +30,8 @@ bot = commands.Bot(
     description="The best sniper in Phantagarde...or possibly all the gardes.",
     case_insensitive=True)
 
+setattr(bot, 'events_channel', int(config['twitter']['discord_channel_id']))
+
 bot.add_cog(bot_commands.SilvaCmds(bot))
 
 twitter_config = ConfigParser()
