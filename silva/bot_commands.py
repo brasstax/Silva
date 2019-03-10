@@ -44,7 +44,8 @@ class SilvaCmds(commands.Cog, name="GBF-related commands"):
                 text = text.replace(word.lower(), choice)
                 text = text.replace(word.capitalize(), choice)
             await ctx.send(text)
-            logging.info(f'{ctx.message.author} called for song')
+            guild = ctx.guild if ctx.guild else 'a direct message'
+            logging.info(f'song requested by {ctx.author} in {guild}.')
         except Exception as e:
             logging.warning(f'Could not get cat fact: {e}')
             await ctx.send("I couldn't get a fact at this time, sorry!")
@@ -54,37 +55,51 @@ class SilvaCmds(commands.Cog, name="GBF-related commands"):
         '''
         Gets information from gbf.wiki on current and future events.
         '''
-        logging.info(f'events requested by {ctx.author}')
-        wiki = await gbfwiki.init_wiki()
-        events = wiki.get_events()
-        msg_current = Embed(
-            title='Granblue Fantasy Current Events',
-            url='https://gbf.wiki',
-            color=Colour.teal())
-        for event in events['current']:
-            msg_current.add_field(
-                name=f"[{event['title']}]({event['url']})",
-                value=f"Ends on {event['finish']}",
-                inline=False
-            )
-        msg_upcoming = Embed(
-            title='Granblue Fantasy Upcoming Events',
-            url='https://gbf.wiki',
-            color=Colour.dark_purple())
-        for event in events['upcoming']:
-            msg_upcoming.add_field(
-                name=f"[{event['title']}]({event['url']})",
-                value=f"{event['start']} to {event['finish']}",
-                inline=False
-            )
-        # send to a dedicated event channel
-        events_channel = self.bot.get_channel(self.bot.events_channel)
-        await events_channel.send(embed=msg_current)
-        await events_channel.send(embed=msg_upcoming)
-        mention_msg = (
-            f'Hi {ctx.author.mention}! I posted the current and'
-            f' upcoming events in {events_channel.mention}.')
-        await ctx.send(mention_msg)
+        guild = ctx.guild if ctx.guild else 'a direct message'
+        logging.info(f'events requested by {ctx.author} in {guild}.')
+        thinking_msg = 'One sec, grabbing the current and upcoming events.'
+        msg = await ctx.send(thinking_msg)
+        try:
+            wiki = await gbfwiki.init_wiki()
+            events = wiki.get_events()
+            msg_current = Embed(
+                title='Granblue Fantasy Current Events',
+                url='https://gbf.wiki',
+                color=Colour.teal())
+            for event in events['current']:
+                msg_current.add_field(
+                    name=f"[{event['title']}]({event['url']})",
+                    value=f"Ends on {event['finish']}",
+                    inline=False
+                )
+            msg_upcoming = Embed(
+                title='Granblue Fantasy Upcoming Events',
+                url='https://gbf.wiki',
+                color=Colour.dark_purple())
+            for event in events['upcoming']:
+                msg_upcoming.add_field(
+                    name=f"[{event['title']}]({event['url']})",
+                    value=f"{event['start']} to {event['finish']}",
+                    inline=False
+                )
+            # send to a dedicated event channel if the message is not a DM
+            if ctx.guild:
+                events_channel = self.bot.get_channel(self.bot.events_channel)
+            else:
+                events_channel = ctx
+            await events_channel.send(embed=msg_current)
+            await events_channel.send(embed=msg_upcoming)
+            if ctx.guild:
+                mention_msg = (
+                    f'Hi {ctx.author.mention}! I posted the current and'
+                    f' upcoming events in {events_channel.mention}.')
+            else:
+                mention_msg = 'Here you go!'
+            await msg.edit(content=mention_msg)
+        except Exception as e:
+            logging.warning(f'Could not retrieve events: {e}')
+            await msg.edit(
+                content="I couldn't retrieve the events at this time.")
 
 
 class MiscCommands(commands.Cog, name='Misc. commands'):
@@ -97,7 +112,8 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
         '''
         Sends the current time, in JST, to a channel.
         '''
-        logging.info(f'time requested by {ctx.author}.')
+        guild = ctx.guild if ctx.guild else 'a direct message'
+        logging.info(f'time requested by {ctx.author} in {guild}.')
         now = datetime.utcnow().replace(tzinfo=pytz.utc)
         jst = now.astimezone(tz=pytz.timezone('Asia/Tokyo'))
         jst_str = datetime.strftime(
@@ -112,7 +128,8 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
         '''
         Sends a link to the bot's github.
         '''
-        logging.info(f'github requested by {ctx.author}.')
+        guild = ctx.guild if ctx.guild else 'a direct message'
+        logging.info(f'github requested by {ctx.author} in {guild}.')
         msg = 'https://github.com/brasstax/Silva'
         await ctx.send(msg)
 
@@ -121,7 +138,8 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
         '''
         Informs the user who wrote this bot.
         '''
-        logging.info(f'blame requested by {ctx.author}.')
+        guild = ctx.guild if ctx.guild else 'a direct message'
+        logging.info(f'blame requested by {ctx.author} in {guild}.')
         app_info = await self.bot.application_info()
         owner = app_info.owner
         msg = f'Blame {owner} for this bot.'
@@ -132,8 +150,14 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
         '''
         Pages the owner of this bot.
         '''
-        logging.info(f'page requested by {ctx.author}.')
-        app_info = await self.bot.application_info()
-        owner = app_info.owner
-        msg = f'{owner.mention}, {ctx.author.mention} is looking for you.'
-        await ctx.send(msg)
+        guild = ctx.guild if ctx.guild else 'a direct message'
+        logging.info(f'page requested by {ctx.author} in {guild}.')
+        # The two servers the bot should be allowed to page the owner in.
+        if (ctx.guild.id != 173939350613131265
+                and ctx.guild.id != 305461329882251275):
+            await ctx.send('You must be in the same server as the owner.')
+        else:
+            app_info = await self.bot.application_info()
+            owner = app_info.owner
+            msg = f'{owner.mention}, {ctx.author.mention} is looking for you.'
+            await ctx.send(msg)
