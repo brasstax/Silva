@@ -30,7 +30,9 @@ bot = commands.Bot(
     description="The best sniper in Phantagarde...or possibly all the gardes.",
     case_insensitive=True)
 
-setattr(bot, 'events_channel', int(config['twitter']['discord_channel_id']))
+setattr(
+    bot, 'events_channel',
+    int(config['twitter']['discord_events_channel_id']))
 
 bot.add_cog(bot_commands.SilvaCmds(bot))
 bot.add_cog(bot_commands.MiscCommands(bot))
@@ -73,7 +75,7 @@ async def on_ready():
         consumer_secret=twitter_config['default']['api_secret'],
         access=twitter_config['default']['access_token'],
         access_secret=twitter_config['default']['access_token_secret'],
-        discord_channel_id=config['twitter']['discord_channel_id'],
+        discord_channel_id=config['twitter']['discord_news_feed_channel_id'],
         twitter_user_id=to_follow)
     await twitter.follow()
 
