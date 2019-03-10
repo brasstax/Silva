@@ -9,10 +9,10 @@ from datetime import datetime
 import pytz
 
 
-class SilvaCmds(commands.Cog, name="Silva commands"):
+class SilvaCmds(commands.Cog, name="GBF-related commands"):
     def __init__(self, bot):
         self.bot = bot
-        logging.info('Bot Initialized.')
+        logging.info('Silva commands initialized.')
 
     @commands.command(name='song', aliases=['tweyen'])
     async def song(self, ctx):
@@ -86,12 +86,18 @@ class SilvaCmds(commands.Cog, name="Silva commands"):
             f' upcoming events in {events_channel.mention}.')
         await ctx.send(mention_msg)
 
+
+class MiscCommands(commands.Cog, name='Misc. commands'):
+    def __init__(self, bot):
+        self.bot = bot
+        logging.info('Misc commands initialized.')
+
     @commands.command(name='jst', aliases=['time'])
     async def time(self, ctx):
         '''
         Sends the current time, in JST, to a channel.
         '''
-        logging.info(f'time requested by {ctx.author}')
+        logging.info(f'time requested by {ctx.author}.')
         now = datetime.utcnow().replace(tzinfo=pytz.utc)
         jst = now.astimezone(tz=pytz.timezone('Asia/Tokyo'))
         jst_str = datetime.strftime(
@@ -99,4 +105,35 @@ class SilvaCmds(commands.Cog, name="Silva commands"):
             '%-H:%M:%S, %A, %B %-d, %Y JST'
         )
         msg = f"It's currently {jst_str}."
+        await ctx.send(msg)
+
+    @commands.command(name='github', aliases=['git'])
+    async def github(self, ctx):
+        '''
+        Sends a link to the bot's github.
+        '''
+        logging.info(f'github requested by {ctx.author}.')
+        msg = 'https://github.com/brasstax/Silva'
+        await ctx.send(msg)
+
+    @commands.command(name='blame', aliases=['credits'])
+    async def blame(self, ctx):
+        '''
+        Informs the user who wrote this bot.
+        '''
+        logging.info(f'blame requested by {ctx.author}.')
+        app_info = await self.bot.application_info()
+        owner = app_info.owner
+        msg = f'Blame {owner} for this bot.'
+        await ctx.send(msg)
+
+    @commands.command(name='page', aliases=['ping'])
+    async def page(self, ctx):
+        '''
+        Pages the owner of this bot.
+        '''
+        logging.info(f'page requested by {ctx.author}.')
+        app_info = await self.bot.application_info()
+        owner = app_info.owner
+        msg = f'{owner.mention}, {ctx.author.mention} is looking for you.'
         await ctx.send(msg)

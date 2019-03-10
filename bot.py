@@ -33,6 +33,7 @@ bot = commands.Bot(
 setattr(bot, 'events_channel', int(config['twitter']['discord_channel_id']))
 
 bot.add_cog(bot_commands.SilvaCmds(bot))
+bot.add_cog(bot_commands.MiscCommands(bot))
 
 twitter_config = ConfigParser()
 twitter_config.read(config['default']['twitter_tokens'])
