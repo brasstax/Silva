@@ -59,13 +59,15 @@ class SilvaCmds(commands.Cog, name="GBF-related commands"):
         logging.info(f'events requested by {ctx.author} in {guild}.')
         thinking_msg = 'One sec, grabbing the current and upcoming events.'
         msg = await ctx.send(thinking_msg)
+        now = datetime.utcnow().replace(tzinfo=pytz.utc)
         try:
             wiki = await gbfwiki.init_wiki()
             events = wiki.get_events()
             msg_current = Embed(
                 title='Granblue Fantasy Current Events',
                 url='https://gbf.wiki',
-                color=Colour.teal())
+                color=Colour.teal(),
+                timestamp=now)
             for event in events['current']:
                 msg_current.add_field(
                     name=f"[{event['title']}]({event['url']})",
@@ -75,7 +77,8 @@ class SilvaCmds(commands.Cog, name="GBF-related commands"):
             msg_upcoming = Embed(
                 title='Granblue Fantasy Upcoming Events',
                 url='https://gbf.wiki',
-                color=Colour.dark_purple())
+                color=Colour.dark_purple(),
+                timestamp=now)
             for event in events['upcoming']:
                 msg_upcoming.add_field(
                     name=f"[{event['title']}]({event['url']})",
@@ -87,8 +90,24 @@ class SilvaCmds(commands.Cog, name="GBF-related commands"):
                 events_channel = self.bot.get_channel(self.bot.events_channel)
             else:
                 events_channel = ctx
-            await events_channel.send(embed=msg_current)
-            await events_channel.send(embed=msg_upcoming)
+            # If the event channel exists, search to see if the bot has posted
+            # existing events before. If so, edit those instead of sending
+            # a new embed. Best used for an events channel that is locked to
+            # posting only by the bot.
+            if ctx.guild:
+                existing_messages = []
+                async for message in events_channel.history(limit=200):
+                    # Assume the first message to edit is the current events,
+                    # and the second message is the upcoming events.
+                    if message.author == self.bot.user and message.pinned:
+                        existing_messages.append(message)
+                    if len(existing_messages) >= 2:
+                        break
+                await existing_messages[0].edit(embed=msg_current)
+                await existing_messages[1].edit(embed=msg_upcoming)
+            else:
+                await events_channel.send(embed=msg_current)
+                await events_channel.send(embed=msg_upcoming)
             if ctx.guild:
                 mention_msg = (
                     f'Hi {ctx.author.mention}! I posted the current and'
