@@ -7,6 +7,7 @@ import random
 from silva.utilities import gbfwiki
 from datetime import datetime
 import pytz
+import aiosqlite
 
 
 class SilvaCmds(commands.Cog, name="GBF-related commands"):
@@ -29,23 +30,25 @@ class SilvaCmds(commands.Cog, name="GBF-related commands"):
             cmd: str = '''
             SELECT word, alias, is_proper_noun FROM aliases;
             '''
-            res: list = bot.cursor.execute(cmd)
-            aliases: dict = {}
-            for row in res:
-                word = row['word']
-                alias = row['alias']
-                if row['is_proper_noun']:
-                    alias = alias.capitalize()
-                if word not in aliases.keys():
-                    aliases[word]: list = []
-                aliases[word].append(alias)
-            for word, alias in aliases.items():
-                choice = random.choice(alias)
-                text = text.replace(word.lower(), choice)
-                text = text.replace(word.capitalize(), choice)
-            await ctx.send(text)
-            guild = ctx.guild if ctx.guild else 'a direct message'
-            logging.info(f'song requested by {ctx.author} in {guild}.')
+            async with aiosqlite.connect(bot.conn) as db:
+                db.row_factory = aiosqlite.Row
+                async with db.execute(cmd) as cursor:
+                    aliases: dict = {}
+                    async for row in cursor:
+                        word = row['word']
+                        alias = row['alias']
+                        if row['is_proper_noun']:
+                            alias = alias.capitalize()
+                        if word not in aliases.keys():
+                            aliases[word]: list = []
+                        aliases[word].append(alias)
+                    for word, alias in aliases.items():
+                        choice = random.choice(alias)
+                        text = text.replace(word.lower(), choice)
+                        text = text.replace(word.capitalize(), choice)
+                    await ctx.send(text)
+                    guild = ctx.guild if ctx.guild else 'a direct message'
+                    logging.info(f'song requested by {ctx.author} in {guild}.')
         except Exception as e:
             logging.warning(f'Could not get cat fact: {e}')
             await ctx.send("I couldn't get a fact at this time, sorry!")

@@ -5,7 +5,7 @@ from discord.ext import commands
 from silva import bot_commands
 from silva.utilities import granblue_twitter
 import discord
-import sqlite3
+import aiosqlite
 import asyncio
 import argparse
 
@@ -43,22 +43,21 @@ twitter_config.read(config['default']['twitter_tokens'])
 
 @bot.event
 async def on_connect():
-    bot.conn = sqlite3.connect('aliases.sqlite3')
-    bot.conn.row_factory = sqlite3.Row
-    bot.cursor = bot.conn.cursor()
-    cmd: str = (
-        "CREATE TABLE IF NOT EXISTS aliases"
-        " (id integer primary key autoincrement,"
-        " word text, alias text, is_proper_noun int DEFAULT 1)"
-    )
-    bot.cursor.execute(cmd)
-    cmd: str = (
-        "CREATE UNIQUE INDEX IF NOT EXISTS"
-        " idx_positions_id ON aliases(id)"
-    )
-    bot.cursor.execute(cmd)
-    bot.conn.commit()
-    setattr(bot, 'twitter_stream', None)
+    bot.conn = 'aliases.sqlite3'
+    async with aiosqlite.connect(bot.conn) as db:
+        db.row_factory = aiosqlite.Row
+        cmd: str = (
+            "CREATE TABLE IF NOT EXISTS aliases"
+            " (id integer primary key autoincrement,"
+            " word text, alias text, is_proper_noun int DEFAULT 1)"
+        )
+        await db.execute(cmd)
+        cmd: str = (
+            "CREATE UNIQUE INDEX IF NOT EXISTS"
+            " idx_positions_id ON aliases(id)"
+        )
+        await db.execute(cmd)
+        await db.commit()
 
 
 @bot.event
