@@ -27,7 +27,7 @@ COMMAND_PREFIX = config['default']['command_prefix']
 
 bot = commands.Bot(
     command_prefix=COMMAND_PREFIX,
-    description="The best sniper in Phantagarde...or possibly all the gardes.",
+    description="The best sniper. She'll drink you under the table.",
     case_insensitive=True)
 
 setattr(
