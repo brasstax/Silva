@@ -130,6 +130,23 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
             text = text.replace(word.capitalize(), choice)
         await ctx.send(text)
 
+    @commands.command(name='alias')
+    async def get_alias(self, ctx, arg: str):
+        '''
+        Gets the aliases for a given word.
+        '''
+        bot = self.bot
+        db = self.db_utils
+        guild = ctx.guild if ctx.guild else 'a direct message'
+        logging.info(
+            f'aliases requested by {ctx.author} in {guild} for {arg}.')
+        aliases = await db.get_alias(bot.conn, arg)
+        if not aliases:
+            msg = f'No aliases found for "{arg}."'
+        else:
+            msg = f'Aliases for "{arg}": {", ".join(aliases)}'
+        await ctx.send(msg)
+
     @commands.command(name='jst', aliases=['time'])
     async def time(self, ctx):
         '''
