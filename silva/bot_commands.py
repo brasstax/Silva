@@ -4,15 +4,15 @@ from discord.ext import commands
 from discord import Embed, Colour
 import aiohttp
 import random
-from silva.utilities import gbfwiki
+from silva.utilities import gbfwiki, misc
 from datetime import datetime
 import pytz
-import aiosqlite
 
 
 class SilvaCmds(commands.Cog, name="GBF-related commands"):
     def __init__(self, bot):
         self.bot = bot
+        self.db_utils = misc.Database()
         logging.info('Silva commands initialized.')
 
     @commands.command(name='song', aliases=['tweyen'])
@@ -21,27 +21,14 @@ class SilvaCmds(commands.Cog, name="GBF-related commands"):
         Gets a fact about Song. Or Tweyen. Depends on Silva's mood.
         '''
         bot = self.bot
+        db = self.db_utils
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(
                     'http://www.pycatfacts.com/catfacts.txt?sfw=true',
                         timeout=10) as fact:
                     text = await fact.text()
-            cmd: str = '''
-            SELECT word, alias, is_proper_noun FROM aliases;
-            '''
-            async with aiosqlite.connect(bot.conn) as db:
-                db.row_factory = aiosqlite.Row
-                async with db.execute(cmd) as cursor:
-                    aliases: dict = {}
-                    async for row in cursor:
-                        word = row['word']
-                        alias = row['alias']
-                        if row['is_proper_noun']:
-                            alias = alias.capitalize()
-                        if word not in aliases.keys():
-                            aliases[word]: list = []
-                        aliases[word].append(alias)
+            aliases = await db.get_aliases(bot.conn)
             for word, alias in aliases.items():
                 choice = random.choice(alias)
                 text = text.replace(word.lower(), choice)
@@ -128,6 +115,11 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
     def __init__(self, bot):
         self.bot = bot
         logging.info('Misc commands initialized.')
+
+    @commands.command(name='testregex', hidden=True)
+    @commands.is_owner()
+    async def test_regex(self, ctx):
+        pass
 
     @commands.command(name='jst', aliases=['time'])
     async def time(self, ctx):
