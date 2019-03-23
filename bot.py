@@ -26,7 +26,7 @@ with open(config['default']['discord_token']) as fp:
 COMMAND_PREFIX = config['default']['command_prefix']
 
 bot = commands.Bot(
-    command_prefix=COMMAND_PREFIX,
+    command_prefix=commands.when_mentioned_or(COMMAND_PREFIX),
     description="The best sniper. She'll drink you under the table.",
     case_insensitive=True)
 
