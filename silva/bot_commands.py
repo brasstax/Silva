@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import logging
 from discord.ext import commands
-from discord import Embed, Colour
+from discord import Embed, Colour, __version__
 import aiohttp
 import random
 from silva.utilities import gbfwiki, misc
@@ -114,12 +114,21 @@ class SilvaCmds(commands.Cog, name="GBF-related commands"):
 class MiscCommands(commands.Cog, name='Misc. commands'):
     def __init__(self, bot):
         self.bot = bot
+        self.db_utils = misc.Database()
         logging.info('Misc commands initialized.')
 
-    @commands.command(name='testregex', hidden=True)
+    @commands.command(name='testregex', aliases=['test', 'regex'], hidden=True)
     @commands.is_owner()
-    async def test_regex(self, ctx):
-        pass
+    async def test_regex(self, ctx, *, arg):
+        bot = self.bot
+        db = self.db_utils
+        text = arg
+        aliases = await db.get_aliases(bot.conn)
+        for word, alias in aliases.items():
+            choice = random.choice(alias)
+            text = text.replace(word.lower(), choice)
+            text = text.replace(word.capitalize(), choice)
+        await ctx.send(text)
 
     @commands.command(name='jst', aliases=['time'])
     async def time(self, ctx):
@@ -135,28 +144,6 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
             '%-H:%M:%S, %A, %B %-d, %Y JST'
         )
         msg = f"It's currently {jst_str}."
-        await ctx.send(msg)
-
-    @commands.command(name='github', aliases=['git'])
-    async def github(self, ctx):
-        '''
-        Sends a link to the bot's github.
-        '''
-        guild = ctx.guild if ctx.guild else 'a direct message'
-        logging.info(f'github requested by {ctx.author} in {guild}.')
-        msg = 'https://github.com/brasstax/Silva'
-        await ctx.send(msg)
-
-    @commands.command(name='blame', aliases=['credits'])
-    async def blame(self, ctx):
-        '''
-        Informs the user who wrote this bot.
-        '''
-        guild = ctx.guild if ctx.guild else 'a direct message'
-        logging.info(f'blame requested by {ctx.author} in {guild}.')
-        app_info = await self.bot.application_info()
-        owner = app_info.owner
-        msg = f'Blame {owner} for this bot.'
         await ctx.send(msg)
 
     @commands.command(name='page', aliases=['ping'])
@@ -175,3 +162,29 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
             owner = app_info.owner
             msg = f'{owner.mention}, {ctx.author.mention} is looking for you.'
             await ctx.send(msg)
+
+    @commands.command(name='info', aliases=['blame', 'github', 'credits'])
+    async def info(self, ctx):
+        '''
+        Outputs running info about this bot.
+        '''
+        guild = ctx.guild if ctx.guild else 'a direct message'
+        logging.info(f'blame requested by {ctx.author} in {guild}.')
+        app_info = await self.bot.application_info()
+        msg = Embed(
+            title='Silva (https://github.com/brasstax/silva)',
+            url='https://github.com/brasstax/silva',
+            color=Colour.teal())
+        msg.set_author(
+            name='Silva',
+            url='https://github.com/brasstax/silva',
+            icon_url=app_info.icon_url)
+        msg.add_field(
+            name="Author",
+            value=app_info.owner,
+            inline=False)
+        msg.add_field(
+            name="Framework",
+            value=f"Discord.py {__version__}"
+        )
+        await ctx.send(embed=msg)
