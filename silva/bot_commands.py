@@ -42,13 +42,13 @@ class SilvaCmds(commands.Cog, name="GBF-related commands"):
                         if word not in aliases.keys():
                             aliases[word]: list = []
                         aliases[word].append(alias)
-                    for word, alias in aliases.items():
-                        choice = random.choice(alias)
-                        text = text.replace(word.lower(), choice)
-                        text = text.replace(word.capitalize(), choice)
-                    await ctx.send(text)
-                    guild = ctx.guild if ctx.guild else 'a direct message'
-                    logging.info(f'song requested by {ctx.author} in {guild}.')
+            for word, alias in aliases.items():
+                choice = random.choice(alias)
+                text = text.replace(word.lower(), choice)
+                text = text.replace(word.capitalize(), choice)
+            await ctx.send(text)
+            guild = ctx.guild if ctx.guild else 'a direct message'
+            logging.info(f'song requested by {ctx.author} in {guild}.')
         except Exception as e:
             logging.warning(f'Could not get cat fact: {e}')
             await ctx.send("I couldn't get a fact at this time, sorry!")
