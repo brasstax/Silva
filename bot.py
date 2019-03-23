@@ -87,10 +87,7 @@ async def on_command_error(ctx, *args, **kwargs):
         guild = 'direct message'
     msg = f'{ctx.author} from {guild} caused an error: {warning}'
     logging.warning(f'message: {msg}')
-    mention = ctx.author.mention
-    content = ctx.message.content
-    r = f"{mention}, I don't know what `{content}` means."
-    await ctx.send(r)
+    pass
 
 try:
     loop.run_until_complete(bot.login(token=TOKEN))
