@@ -29,6 +29,7 @@ bot = commands.Bot(
     command_prefix=commands.when_mentioned_or(COMMAND_PREFIX),
     description="The best sniper. She'll drink you under the table.",
     case_insensitive=True)
+bot.conn = 'aliases.sqlite3'
 
 setattr(
     bot, 'events_channel',
@@ -44,7 +45,6 @@ twitter_config.read(config['default']['twitter_tokens'])
 
 @bot.event
 async def on_connect():
-    bot.conn = 'aliases.sqlite3'
     async with aiosqlite.connect(bot.conn) as db:
         db.row_factory = aiosqlite.Row
         cmd: str = (

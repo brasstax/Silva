@@ -7,11 +7,14 @@ import random
 
 
 class Database():
-    async def get_aliases(self, conn: str) -> Dict[str, List[str]]:
+    def __init__(self, conn: str):
+        self.conn = conn
+
+    async def get_aliases(self) -> Dict[str, List[str]]:
         cmd: str = '''
         SELECT word, alias, is_proper_noun FROM aliases;
         '''
-        async with aiosqlite.connect(conn) as db:
+        async with aiosqlite.connect(self.conn) as db:
             db.row_factory = aiosqlite.Row
             async with db.execute(cmd) as cursor:
                 aliases: dict = {}
@@ -25,15 +28,15 @@ class Database():
                     aliases[word].append(alias)
         return aliases
 
-    async def get_alias(self, conn: str, word: str) -> List[str]:
-        aliases = await self.get_aliases(conn)
+    async def get_alias(self, word: str) -> List[str]:
+        aliases = await self.get_aliases()
         try:
             return aliases[word]
         except KeyError:
             return None
 
-    async def set_alias(self, conn: str, word: str, alias: str, proper):
-        aliases = await self.get_aliases(conn)
+    async def set_alias(self, word: str, alias: str, proper):
+        aliases = await self.get_aliases()
         try:
             if re.search(alias, ' '.join(aliases[word]), flags=re.IGNORECASE):
                 raise self.AliasExistsError
@@ -43,7 +46,7 @@ class Database():
         INSERT INTO aliases(word, alias, is_proper_noun) VALUES
          (?, ?, ?)
         '''
-        async with aiosqlite.connect(conn) as db:
+        async with aiosqlite.connect(self.conn) as db:
             await db.execute(cmd, (word.lower(), alias.lower(), proper))
             await db.commit()
 
@@ -66,12 +69,19 @@ class TextUtils():
         :param text (str): Text to parse and make replacements
         return new_text(str)
         '''
-        db = Database()
-        aliases = await db.get_aliases(conn)
+        db = Database(conn)
+        aliases = await db.get_aliases()
         for word, alias in aliases.items():
             regex = re.compile(r"\b{}s?\b".format(word), flags=re.IGNORECASE)
             choice = random.choice(alias)
-            text = re.sub(regex, choice, text)
+            # Replace the words, but do not remove the pluralization.
+            # aka "cats" should become "Songs" and not just "Song."
+            if re.findall(regex, text):
+                text = re.sub(
+                    r"\b{}(\b)?".format(word),
+                    choice,
+                    text,
+                    flags=re.IGNORECASE)
             # The text might be multiple sentences. We want to make sure
             # each sentence is capitalized properly.
             # Unfortunately, text.capitalize() doesn't factor in proper nouns,

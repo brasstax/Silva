@@ -109,7 +109,7 @@ class SilvaCmds(commands.Cog, name="GBF-related commands"):
 class AliasCommands(commands.Cog, name='Alias commands'):
     def __init__(self, bot):
         self.bot = bot
-        self.db_utils = misc.Database()
+        self.db_utils = misc.Database(bot.conn)
         logging.info('Alias commands initialized.')
 
     @commands.command(name='alias', aliases=['aliases'])
@@ -117,12 +117,11 @@ class AliasCommands(commands.Cog, name='Alias commands'):
         '''
         Gets the aliases for a given word.
         '''
-        bot = self.bot
         db = self.db_utils
         guild = ctx.guild if ctx.guild else 'a direct message'
         logging.info(
             f'aliases requested by {ctx.author} in {guild} for {word}.')
-        aliases = await db.get_alias(bot.conn, word)
+        aliases = await db.get_alias(word)
         if not aliases:
             msg = f'No aliases found for "{word}."'
         else:
@@ -139,14 +138,13 @@ class AliasCommands(commands.Cog, name='Alias commands'):
         :param alias (str): The alias to add to a word.
         :param is_proper (bool): Whether the alias is a proper noun.
         '''
-        bot = self.bot
         db = self.db_utils
         try:
             if is_proper:
                 proper: int = 1
             else:
                 proper: int = 0
-            await db.set_alias(bot.conn, word, alias, proper)
+            await db.set_alias(word, alias, proper)
             msg = f'Alias "{alias}" added for "{word}."'
             await ctx.send(msg)
         except misc.Database.AliasExistsError:
