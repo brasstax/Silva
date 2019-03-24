@@ -50,6 +50,14 @@ class Database():
             await db.execute(cmd, (word.lower(), alias.lower(), proper))
             await db.commit()
 
+    async def rm_alias(self, word: str, alias: str):
+        cmd: str = '''
+        DELETE FROM aliases WHERE word = ? AND alias = ?;
+        '''
+        async with aiosqlite.connect(self.conn) as db:
+            await db.execute(cmd, (word.lower(), alias.lower()))
+            await db.commit()
+
     class AliasExistsError(Exception):
         pass
 

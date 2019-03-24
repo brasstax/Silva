@@ -151,6 +151,28 @@ class AliasCommands(commands.Cog, name='Alias commands'):
             msg = f'Alias "{alias}" already exists for "{word}."'
             await ctx.send(msg)
 
+    @commands.command(name='rmalias', aliases=['delalias'], hidden=True)
+    @commands.is_owner()
+    async def rm_alias(
+            self, ctx, word: str, alias: str):
+        '''
+        Removes an alias from a given word.
+        :param word (str): the word to remove the alias from.
+        :param alias (str): the alias to remove.
+        '''
+        db = self.db_utils
+        aliases = await db.get_alias(word)
+        if not aliases:
+            await ctx.send(f'"{alias}" is not an alias of "{word}."')
+            return
+        aliases = [x.lower() for x in aliases]
+        if alias not in aliases:
+            await ctx.send(f'"{alias}" is not an alias of "{word}."')
+        else:
+            await db.rm_alias(word, alias)
+            await ctx.send(f'"{alias}" removed as alias from "{word}."')
+        return
+
 
 class MiscCommands(commands.Cog, name='Misc. commands'):
     def __init__(self, bot):
