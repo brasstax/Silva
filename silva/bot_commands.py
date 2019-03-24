@@ -3,7 +3,6 @@ import logging
 from discord.ext import commands
 from discord import Embed, Colour, __version__
 import aiohttp
-import random
 from silva.utilities import gbfwiki, misc
 from datetime import datetime
 import pytz
@@ -12,7 +11,7 @@ import pytz
 class SilvaCmds(commands.Cog, name="GBF-related commands"):
     def __init__(self, bot):
         self.bot = bot
-        self.db_utils = misc.Database()
+        self.text_utils = misc.TextUtils()
         logging.info('Silva commands initialized.')
 
     @commands.command(name='song', aliases=['tweyen'])
@@ -21,19 +20,15 @@ class SilvaCmds(commands.Cog, name="GBF-related commands"):
         Gets a fact about Song. Or Tweyen. Depends on Silva's mood.
         '''
         bot = self.bot
-        db = self.db_utils
+        text_utils = self.text_utils
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(
                     'http://www.pycatfacts.com/catfacts.txt?sfw=true',
                         timeout=10) as fact:
                     text = await fact.text()
-            aliases = await db.get_aliases(bot.conn)
-            for word, alias in aliases.items():
-                choice = random.choice(alias)
-                text = text.replace(word.lower(), choice)
-                text = text.replace(word.capitalize(), choice)
-            await ctx.send(text)
+            new_text = await text_utils.regex(bot.conn, text)
+            await ctx.send(new_text)
             guild = ctx.guild if ctx.guild else 'a direct message'
             logging.info(f'song requested by {ctx.author} in {guild}.')
         except Exception as e:
@@ -162,21 +157,17 @@ class AliasCommands(commands.Cog, name='Alias commands'):
 class MiscCommands(commands.Cog, name='Misc. commands'):
     def __init__(self, bot):
         self.bot = bot
-        self.db_utils = misc.Database()
+        self.text_utils = misc.TextUtils()
         logging.info('Misc commands initialized.')
 
     @commands.command(name='testregex', aliases=['test', 'regex'], hidden=True)
     @commands.is_owner()
     async def test_regex(self, ctx, *, arg):
         bot = self.bot
-        db = self.db_utils
+        text_utils = self.text_utils
         text = arg
-        aliases = await db.get_aliases(bot.conn)
-        for word, alias in aliases.items():
-            choice = random.choice(alias)
-            text = text.replace(word.lower(), choice)
-            text = text.replace(word.capitalize(), choice)
-        await ctx.send(text)
+        new_text = await text_utils.regex(bot.conn, text)
+        await ctx.send(new_text)
 
     @commands.command(name='jst', aliases=['time'])
     async def time(self, ctx):
