@@ -36,6 +36,7 @@ setattr(
 
 bot.add_cog(bot_commands.SilvaCmds(bot))
 bot.add_cog(bot_commands.MiscCommands(bot))
+bot.add_cog(bot_commands.AliasCommands(bot))
 
 twitter_config = ConfigParser()
 twitter_config.read(config['default']['twitter_tokens'])

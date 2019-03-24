@@ -2,6 +2,7 @@
 # misc.py
 import aiosqlite
 from typing import Dict, List
+import re
 
 
 class Database():
@@ -18,9 +19,9 @@ class Database():
                     alias = row['alias']
                     if row['is_proper_noun']:
                         alias = alias.capitalize()
-                        if word not in aliases.keys():
-                            aliases[word]: list = []
-                        aliases[word].append(alias)
+                    if word not in aliases.keys():
+                        aliases[word]: list = []
+                    aliases[word].append(alias)
         return aliases
 
     async def get_alias(self, conn: str, word: str) -> List[str]:
@@ -29,3 +30,21 @@ class Database():
             return aliases[word]
         except KeyError:
             return None
+
+    async def set_alias(self, conn: str, word: str, alias: str, proper):
+        aliases = await self.get_aliases(conn)
+        try:
+            if re.search(alias, ' '.join(aliases[word]), flags=re.IGNORECASE):
+                raise self.AliasExistsError
+        except KeyError:
+            pass
+        cmd: str = '''
+        INSERT INTO aliases(word, alias, is_proper_noun) VALUES
+         (?, ?, ?)
+        '''
+        async with aiosqlite.connect(conn) as db:
+            await db.execute(cmd, (word.lower(), alias.lower(), proper))
+            await db.commit()
+
+    class AliasExistsError(Exception):
+        pass
