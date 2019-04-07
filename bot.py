@@ -3,7 +3,7 @@ from configparser import ConfigParser
 import logging
 from discord.ext import commands
 from silva import bot_commands
-from silva.utilities import granblue_twitter
+from silva.utilities import granblue_twitter, scheduled_commands
 import discord
 import aiosqlite
 import asyncio
@@ -30,6 +30,7 @@ bot = commands.Bot(
     description="The best sniper. She'll drink you under the table.",
     case_insensitive=True)
 bot.conn = 'aliases.sqlite3'
+bot.events_channel = config['twitter']['discord_news_feed_channel_id']
 
 setattr(
     bot, 'events_channel',
@@ -92,6 +93,8 @@ async def on_command_error(ctx, *args, **kwargs):
 
 try:
     loop.run_until_complete(bot.login(token=TOKEN))
+    scheduled = scheduled_commands.ScheduledEvents(bot)
+    loop.create_task(scheduled.update_events())
     loop.run_until_complete(bot.connect())
 except KeyboardInterrupt:
     logging.info('Logging out. (You might need to ctrl-C twice.)')

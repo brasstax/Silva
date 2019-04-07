@@ -88,8 +88,12 @@ class SilvaCmds(commands.Cog, name="GBF-related commands"):
                         existing_messages.append(message)
                     if len(existing_messages) >= 2:
                         break
-                await existing_messages[0].edit(embed=msg_current)
-                await existing_messages[1].edit(embed=msg_upcoming)
+                if not existing_messages:
+                    await events_channel.send(embed=msg_current)
+                    await events_channel.send(embed=msg_upcoming)
+                else:
+                    await existing_messages[0].edit(embed=msg_current)
+                    await existing_messages[1].edit(embed=msg_upcoming)
             else:
                 await events_channel.send(embed=msg_current)
                 await events_channel.send(embed=msg_upcoming)
