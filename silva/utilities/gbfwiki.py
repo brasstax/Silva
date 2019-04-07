@@ -103,18 +103,15 @@ class Wiki:
                 event['url'] = url
             else:
                 event['url'] = 'No wiki page'
-            if datetime.utcfromtimestamp(
-                    int(span['title']['utc start'])).replace(
-                        tzinfo=pytz.utc) <= now:
+            if datetime.fromtimestamp(
+                    int(span['title']['utc start']), pytz.utc) <= now:
                 events['current'].append(event)
             else:
                 events['upcoming'].append(event)
         special_events = self.get_special_events()
         for event in special_events:
-            start = datetime.utcfromtimestamp(event['utc start'])
-            start = start.replace(tzinfo=pytz.utc)
-            end = datetime.utcfromtimestamp(event['utc end'])
-            end = end.replace(tzinfo=pytz.utc)
+            start = datetime.fromtimestamp(event['utc start'], pytz.utc)
+            end = datetime.fromtimestamp(event['utc end'], pytz.utc)
             if start <= now:
                 if end > now:
                     events['current'].append(event)
