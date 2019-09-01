@@ -5,6 +5,7 @@ from discord import Embed, Colour, __version__
 import aiohttp
 from silva.utilities import gbfwiki, misc
 from datetime import datetime
+import random
 import pytz
 
 
@@ -26,8 +27,28 @@ class SilvaCmds(commands.Cog, name="GBF-related commands"):
                 async with session.get(
                     'http://www.pycatfacts.com/catfacts.txt?sfw=true',
                         timeout=10) as fact:
+                    status = fact.status
                     text = await fact.text()
-            new_text = await text_utils.regex(bot.conn, text)
+            if status > 400:
+                new_text = random.choice(
+                    [
+                        'Hic... _hic..._ Soooooooong...where are youuuuu....',
+                        'Heyyyyyy. Another beer! I ran out!',
+                        'I love beer. More beeeeeeeeeeer!',
+                        'Zzzzzz...',
+                        'Beer! Beer! Beer! Beer! Beer!',
+                        "We're never going to get SSR Reinhardtzar!"
+                    ]
+                )
+                new_text += " (Silva has had a bit too much to drink."
+                app_info = await self.bot.application_info()
+                owner = app_info.owner
+                new_text += (
+                    f" {owner.mention},"
+                    " please check why Silva isn't working right.)")
+                logging.info(f'Status from server: {status} {text}')
+            else:
+                new_text = await text_utils.regex(bot.conn, text)
             await ctx.send(new_text)
             guild = ctx.guild if ctx.guild else 'a direct message'
             logging.info(f'song requested by {ctx.author} in {guild}.')

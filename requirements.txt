@@ -1,7 +1,7 @@
 aiohttp==3.5.4
 async-timeout==3.0.1
 chardet==3.0.4
-git+https://github.com/Rapptz/discord.py@f6869242ca11577e04d036ae74e00a82d94fb372
+discord.py
 multidict==4.5.2
 websockets==6.0
 configparser==3.7.1

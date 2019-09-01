@@ -70,7 +70,7 @@ async def on_ready():
     await bot.change_presence(status=discord.Status.online, activity=activity)
     to_follow_str = config['twitter']['twitter_user_id'].split(',')
     to_follow = [int(item) for item in to_follow_str]
-    twitter = granblue_twitter.Twitter(
+    bot.twitter = granblue_twitter.Twitter(
         bot=bot,
         consumer=twitter_config['default']['api'],
         consumer_secret=twitter_config['default']['api_secret'],
@@ -78,7 +78,7 @@ async def on_ready():
         access_secret=twitter_config['default']['access_token_secret'],
         discord_channel_id=config['twitter']['discord_news_feed_channel_id'],
         twitter_user_id=to_follow)
-    await twitter.follow()
+    await bot.twitter.follow()
 
 
 @bot.event
@@ -100,4 +100,5 @@ except KeyboardInterrupt:
     logging.info('Logging out. (You might need to ctrl-C twice.)')
     loop.run_until_complete(bot.logout())
 finally:
+    loop.run_until_complete(bot.twitter.client.close())
     loop.close()
