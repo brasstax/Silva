@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 import logging
 from discord.ext import commands
-from discord import Embed, Colour, __version__
+from discord import Embed, Colour, __version__, File
 import aiohttp
 from silva.utilities import gbfwiki, misc
 from datetime import datetime
 import random
 import pytz
+import re
+import io
 
 
 class SilvaCmds(commands.Cog, name="GBF-related commands"):
@@ -29,7 +31,7 @@ class SilvaCmds(commands.Cog, name="GBF-related commands"):
                         timeout=10) as fact:
                     status = fact.status
                     text = await fact.text()
-            if status > 400:
+            if status >= 400:
                 new_text = random.choice(
                     [
                         'Hic... _hic..._ Soooooooong...where are youuuuu....',
@@ -272,3 +274,34 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
             value=f"Discord.py {__version__}"
         )
         await ctx.send(embed=msg)
+
+    @commands.command(name='embiggen', aliases=['bigmoji', 'hugemoji'])
+    async def hugemoji(self, ctx, emoji: str):
+        '''
+        Takes a Discord emoji and posts it as a large picture.
+        '''
+        logging.info(f'{ctx.author} requested embiggen for {emoji}.')
+        emoji_regex = r'^<a?:\w+:\d+>$'
+        if not re.match(emoji_regex, emoji):
+            await ctx.send('No emoji found.')
+        else:
+            # Static emojis are uploaded as png, and animated emojis are
+            # uploaded as a gif. Try to get the gif first; if 415,
+            # get the PNG.
+            emoji_id = re.findall('\d+', emoji)[0]
+            emoji_name = re.findall(':\w+', emoji)[0]
+            emoji_url = f'https://cdn.discordapp.com/emojis/{emoji_id}'
+            try:
+                async with aiohttp.ClientSession() as session:
+                    resp = await session.get(
+                            f'{emoji_url}.gif', timeout=10)
+                    emoji_name_ext = f'{emoji_name}.gif'
+                    if resp.status != 200:
+                        resp = await session.get(
+                            f'{emoji_url}.png', timeout=10)
+                        emoji_name_ext = f'{emoji_name}.png'
+                    data = io.BytesIO(await resp.read())
+                    await ctx.send(file=File(data, f'{emoji_name_ext}'))
+            except Exception as e:
+                logging.warning(e)
+                await ctx.send("Couldn't embiggen at this time.")
