@@ -288,8 +288,11 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
             # Static emojis are uploaded as png, and animated emojis are
             # uploaded as a gif. Try to get the gif first; if 415,
             # get the PNG.
-            emoji_id = re.findall('\d+', emoji)[0]
-            emoji_name = re.findall(':\w+', emoji)[0]
+            # Get only the ID (in case the emoji name has a number)
+            emoji_id = re.findall('\d+', emoji)[-1]
+            # Get the name of the emoji (avoids the 'a:' prefix)
+            # for animated emoji
+            emoji_name = re.findall(':\w+', emoji)[0][1:]
             emoji_url = f'https://cdn.discordapp.com/emojis/{emoji_id}'
             try:
                 async with aiohttp.ClientSession() as session:
