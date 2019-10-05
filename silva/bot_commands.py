@@ -8,7 +8,6 @@ from datetime import datetime
 import random
 import pytz
 import re
-import io
 
 
 class SilvaCmds(commands.Cog, name="GBF-related commands"):
@@ -284,21 +283,18 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
         emoji_regex = r'(^<a?:\w+:\d+>$)|(^.$)'
         if not re.match(emoji_regex, emoji):
             return await ctx.send('No emoji found.')
+        utils = misc.EmojiUtils()
         # For standard emoji, check to see if we can grab the image
         # from MaxCDN.
         if len(emoji) == 1:
             emoji_id = hex(ord(emoji))[2:]
             emoji_name_ext = f'{emoji_id}.png'
-            emoji_url = f'https://twemoji.maxcdn.com/72x72/{emoji_name_ext}'
             try:
-                async with aiohttp.ClientSession() as session:
-                    resp = await session.get(
-                        emoji_url, timeout=10)
-                    if resp.status != 200:
-                        return await ctx.send('No emoji found.')
-                    data = io.BytesIO(await resp.read())
+                data, img_type = await utils.get_emoji('maxcdn', emoji_id)
                 return await ctx.send(
                     file=File(data, f'{emoji_name_ext}'))
+            except utils.NoEmojiFound:
+                return await ctx.send("No emoji found.")
             except Exception as e:
                 logging.warning(e)
                 return await ctx.send("Couldn't embiggen at this time.")
@@ -310,18 +306,9 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
         # Get the name of the emoji (avoids the 'a:' prefix)
         # for animated emoji
         emoji_name = re.findall(':\w+', emoji)[0][1:]
-        emoji_url = f'https://cdn.discordapp.com/emojis/{emoji_id}'
         try:
-            async with aiohttp.ClientSession() as session:
-                resp = await session.get(
-                        f'{emoji_url}.gif', timeout=10)
-                emoji_name_ext = f'{emoji_name}.gif'
-                if resp.status != 200:
-                    resp = await session.get(
-                        f'{emoji_url}.png', timeout=10)
-                    emoji_name_ext = f'{emoji_name}.png'
-                data = io.BytesIO(await resp.read())
-            return await ctx.send(file=File(data, f'{emoji_name_ext}'))
+            data, img_type = await utils.get_emoji('discord', emoji_id)
+            return await ctx.send(file=File(data, f'{emoji_name}.{img_type}'))
         except Exception as e:
             logging.warning(e)
             return await ctx.send("Couldn't embiggen at this time.")

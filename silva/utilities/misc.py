@@ -4,6 +4,8 @@ import aiosqlite
 from typing import Dict, List
 import re
 import random
+import aiohttp
+import io
 
 
 class Database():
@@ -117,3 +119,44 @@ class TextUtils():
             if not new_text.endswith('.'):
                 new_text += '.'
         return new_text
+
+
+class EmojiUtils():
+    async def get_emoji(self, cdn: str, emoji_id: str):
+        '''
+        Downloads the requested emoji from a given CDN.
+        :param cdn (str): the CDN to use. For standard emoji, 'maxcdn'.
+            For Discord's emoji, 'discord'.
+        :param emoji_id (int): the ID of the emoji. For standard emoji,
+            the hex value (without the leading 0x.) For Discord's custom
+            emoji, the numerical ID of the emoji.
+        :return tuple of io.BytesIO of the emoji picture and the image type.
+        '''
+        if cdn == 'maxcdn':
+            emoji_url = 'https://twemoji.maxcdn.com/2/72x72/'
+        if cdn == 'discord':
+            emoji_url = 'https://cdn.discordapp.com/emojis/'
+        try:
+            async with aiohttp.ClientSession() as session:
+                if cdn == 'discord':
+                    resp = await session.get(
+                        f'{emoji_url}/{emoji_id}.gif', timeout=10)
+                    img_type = 'gif'
+                    if resp.status != 200:
+                        resp = await session.get(
+                            f'{emoji_url}/{emoji_id}.png', timeout=10)
+                        img_type = 'png'
+                if cdn == 'maxcdn':
+                    resp = await session.get(
+                        f'{emoji_url}/{emoji_id}.png', timeout=10)
+                    img_type = 'png'
+                    if resp.status != 200:
+                        raise self.NoEmojiFound('No emoji found.')
+                return (io.BytesIO(await resp.read()), img_type)
+        except self.NoEmojiFound as e:
+            raise self.NoEmojiFound(e)
+        except Exception as e:
+            raise aiohttp.ClientResponseError(e)
+
+    class NoEmojiFound(Exception):
+        pass
