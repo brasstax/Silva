@@ -7,6 +7,7 @@ import random
 import aiohttp
 import io
 import cairosvg
+from PIL import Image, ImageEnhance
 
 
 class Database():
@@ -148,6 +149,16 @@ class EmojiUtils():
                             f'{emoji_url}/{emoji_id}.png', timeout=10)
                         img_type = 'png'
                     output = io.BytesIO(await resp.read())
+                    # Check the resolution of the output, and if width < 100,
+                    # increase image resolution and enhance for sharpness.
+                    # It won't be perfect and it won't work well for all
+                    # images, but ¯\_(ツ)_/¯
+                    image = Image.open(output)
+                    if image.width < 100 and img_type == 'png':
+                        output = self.enhance_image(output, img_type)
+                    else:
+                        output.seek(0)
+                    return (output, img_type)
                 if cdn == 'maxcdn':
                     resp = await session.get(
                         f'{emoji_url}/{emoji_id}.svg', timeout=10)
@@ -169,6 +180,24 @@ class EmojiUtils():
             raise self.NoEmojiFound(e)
         except Exception as e:
             raise aiohttp.ClientResponseError(e)
+
+    def enhance_image(self, data: io.BytesIO, img_type: str) -> io.BytesIO:
+        '''
+        Sharpens an incoming image. Returns an io.BytesIO representation
+        of the enhanced image.
+        '''
+        data.seek(0)
+        basewidth = 128
+        image = Image.open(data)
+        wpercent = basewidth / float(image.width)
+        height = int(float(image.height) * float(wpercent))
+        embiggened = image.resize((basewidth, height))
+        enhancer = ImageEnhance.Sharpness(embiggened)
+        enhanced = enhancer.enhance(2.0)
+        output = io.BytesIO()
+        enhanced.save(output, format=img_type)
+        output.seek(0)
+        return output
 
     class NoEmojiFound(Exception):
         pass
