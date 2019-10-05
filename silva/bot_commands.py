@@ -280,10 +280,12 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
         Takes a Discord emoji and posts it as a large picture.
         '''
         logging.info(f'{ctx.author} requested embiggen for {emoji}.')
-        emoji_regex = r'(^<a?:\w+:\d+>$)|(^.$)'
+        emoji_regex = r'(^\\?<a?:\w+:\d+>$)|(^\\?.$)'
         if not re.match(emoji_regex, emoji):
             return await ctx.send('No emoji found.')
         utils = misc.EmojiUtils()
+        # strip out any backslashes in our emoji string.
+        emoji = emoji.replace('\\', '')
         # For standard emoji, check to see if we can grab the image
         # from MaxCDN.
         if len(emoji) == 1:
