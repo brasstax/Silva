@@ -281,30 +281,47 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
         Takes a Discord emoji and posts it as a large picture.
         '''
         logging.info(f'{ctx.author} requested embiggen for {emoji}.')
-        emoji_regex = r'^<a?:\w+:\d+>$'
+        emoji_regex = r'(^<a?:\w+:\d+>$)|(^.$)'
         if not re.match(emoji_regex, emoji):
-            await ctx.send('No emoji found.')
-        else:
-            # Static emojis are uploaded as png, and animated emojis are
-            # uploaded as a gif. Try to get the gif first; if 415,
-            # get the PNG.
-            # Get only the ID (in case the emoji name has a number)
-            emoji_id = re.findall('\d+', emoji)[-1]
-            # Get the name of the emoji (avoids the 'a:' prefix)
-            # for animated emoji
-            emoji_name = re.findall(':\w+', emoji)[0][1:]
-            emoji_url = f'https://cdn.discordapp.com/emojis/{emoji_id}'
+            return await ctx.send('No emoji found.')
+        # For standard emoji, check to see if we can grab the image
+        # from MaxCDN.
+        if len(emoji) == 1:
+            emoji_id = hex(ord(emoji))[2:]
+            emoji_name_ext = f'{emoji_id}.png'
+            emoji_url = f'https://twemoji.maxcdn.com/72x72/{emoji_name_ext}'
             try:
                 async with aiohttp.ClientSession() as session:
                     resp = await session.get(
-                            f'{emoji_url}.gif', timeout=10)
-                    emoji_name_ext = f'{emoji_name}.gif'
+                        emoji_url, timeout=10)
                     if resp.status != 200:
-                        resp = await session.get(
-                            f'{emoji_url}.png', timeout=10)
-                        emoji_name_ext = f'{emoji_name}.png'
+                        return await ctx.send('No emoji found.')
                     data = io.BytesIO(await resp.read())
-                    await ctx.send(file=File(data, f'{emoji_name_ext}'))
+                return await ctx.send(
+                    file=File(data, f'{emoji_name_ext}'))
             except Exception as e:
                 logging.warning(e)
-                await ctx.send("Couldn't embiggen at this time.")
+                return await ctx.send("Couldn't embiggen at this time.")
+        # Static emojis are uploaded as png, and animated emojis are
+        # uploaded as a gif. Try to get the gif first; if 415,
+        # get the PNG.
+        # Get only the ID (in case the emoji name has a number)
+        emoji_id = re.findall('\d+', emoji)[-1]
+        # Get the name of the emoji (avoids the 'a:' prefix)
+        # for animated emoji
+        emoji_name = re.findall(':\w+', emoji)[0][1:]
+        emoji_url = f'https://cdn.discordapp.com/emojis/{emoji_id}'
+        try:
+            async with aiohttp.ClientSession() as session:
+                resp = await session.get(
+                        f'{emoji_url}.gif', timeout=10)
+                emoji_name_ext = f'{emoji_name}.gif'
+                if resp.status != 200:
+                    resp = await session.get(
+                        f'{emoji_url}.png', timeout=10)
+                    emoji_name_ext = f'{emoji_name}.png'
+                data = io.BytesIO(await resp.read())
+            return await ctx.send(file=File(data, f'{emoji_name_ext}'))
+        except Exception as e:
+            logging.warning(e)
+            return await ctx.send("Couldn't embiggen at this time.")
