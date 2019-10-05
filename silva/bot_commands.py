@@ -291,6 +291,7 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
             emoji_name_ext = f'{emoji_id}.png'
             try:
                 data, img_type = await utils.get_emoji('maxcdn', emoji_id)
+                data.seek(0)
                 return await ctx.send(
                     file=File(data, f'{emoji_name_ext}'))
             except utils.NoEmojiFound:

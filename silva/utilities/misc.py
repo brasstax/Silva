@@ -6,6 +6,7 @@ import re
 import random
 import aiohttp
 import io
+import cairosvg
 
 
 class Database():
@@ -133,7 +134,7 @@ class EmojiUtils():
         :return tuple of io.BytesIO of the emoji picture and the image type.
         '''
         if cdn == 'maxcdn':
-            emoji_url = 'https://twemoji.maxcdn.com/2/72x72/'
+            emoji_url = 'https://twemoji.maxcdn.com/2/svg/'
         if cdn == 'discord':
             emoji_url = 'https://cdn.discordapp.com/emojis/'
         try:
@@ -146,13 +147,24 @@ class EmojiUtils():
                         resp = await session.get(
                             f'{emoji_url}/{emoji_id}.png', timeout=10)
                         img_type = 'png'
+                    output = io.BytesIO(await resp.read())
                 if cdn == 'maxcdn':
                     resp = await session.get(
-                        f'{emoji_url}/{emoji_id}.png', timeout=10)
+                        f'{emoji_url}/{emoji_id}.svg', timeout=10)
                     img_type = 'png'
                     if resp.status != 200:
                         raise self.NoEmojiFound('No emoji found.')
-                return (io.BytesIO(await resp.read()), img_type)
+                    data = await resp.read()
+                    input = io.BytesIO(data)
+                    output = io.BytesIO()
+                    input.seek(0)
+                    cairosvg.svg2png(
+                        file_obj=input,
+                        parent_height=128,
+                        parent_width=128,
+                        write_to=output
+                    )
+                return (output, img_type)
         except self.NoEmojiFound as e:
             raise self.NoEmojiFound(e)
         except Exception as e:
