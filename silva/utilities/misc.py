@@ -155,7 +155,7 @@ class EmojiUtils():
                     # images, but ¯\_(ツ)_/¯
                     image = Image.open(output)
                     if image.width < 100 and img_type == 'png':
-                        output = self.enhance_image(output, img_type)
+                        output = await self.enhance_image(output, img_type)
                     else:
                         output.seek(0)
                     return (output, img_type)
@@ -181,7 +181,8 @@ class EmojiUtils():
         except Exception as e:
             raise aiohttp.ClientResponseError(e)
 
-    def enhance_image(self, data: io.BytesIO, img_type: str) -> io.BytesIO:
+    async def enhance_image(
+            self, data: io.BytesIO, img_type: str) -> io.BytesIO:
         '''
         Sharpens an incoming image. Returns an io.BytesIO representation
         of the enhanced image.
