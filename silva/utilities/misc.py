@@ -179,7 +179,7 @@ class EmojiUtils():
         except self.NoEmojiFound as e:
             raise self.NoEmojiFound(e)
         except Exception as e:
-            raise aiohttp.ClientResponseError(e)
+            raise Exception(e)
 
     async def enhance_image(
             self, data: io.BytesIO, img_type: str) -> io.BytesIO:
@@ -190,6 +190,7 @@ class EmojiUtils():
         data.seek(0)
         basewidth = 128
         image = Image.open(data)
+        image = image.convert('RGBA')
         wpercent = basewidth / float(image.width)
         height = int(float(image.height) * float(wpercent))
         embiggened = image.resize((basewidth, height))
