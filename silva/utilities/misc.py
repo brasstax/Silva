@@ -101,7 +101,7 @@ class TextUtils():
             # capitalize the first letter of every sentence,
             # then join them back together.
             # Splits a sentence by periods.
-            sub = re.compile('\.(\s+)?')
+            sub = re.compile(r'\.(\s+)?')
             text_list = sub.split(text)
             new_text_list = []
             # Does a sentence start with a lowercase letter?

@@ -157,7 +157,7 @@ class AliasCommands(commands.Cog, name='Alias commands'):
     @commands.command(name='addalias', aliases=['setalias'], hidden=True)
     @commands.is_owner()
     async def set_alias(
-            self, ctx, word: str, alias: str, is_proper: bool='True'):
+            self, ctx, word: str, alias: str, is_proper: bool = 'True'):
         '''
         Adds an alias to a given word.
         :param word (str): The word to add an alias for.
@@ -305,10 +305,10 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
         # uploaded as a gif. Try to get the gif first; if 415,
         # get the PNG.
         # Get only the ID (in case the emoji name has a number)
-        emoji_id = re.findall('\d+', emoji)[-1]
+        emoji_id = re.findall(r'\d+', emoji)[-1]
         # Get the name of the emoji (avoids the 'a:' prefix)
         # for animated emoji
-        emoji_name = re.findall(':\w+', emoji)[0][1:]
+        emoji_name = re.findall(r':\w+', emoji)[0][1:]
         try:
             data, img_type = await utils.get_emoji('discord', emoji_id)
             return await ctx.send(file=File(data, f'{emoji_name}.{img_type}'))
