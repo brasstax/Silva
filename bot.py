@@ -15,7 +15,7 @@ parser.add_argument('--config', '-c', type=str, default='config.ini')
 args = parser.parse_args()
 config_file = args.config
 
-log_format = "%(asctime)s - %(levelname)s - %(message)s"
+log_format = "[%(filename)s:%(lineno)s:%(funcName)s() ]%(asctime)s - %(levelname)s - %(message)s"  # noqa
 logging.basicConfig(level=logging.INFO, format=log_format)
 
 config = ConfigParser()
