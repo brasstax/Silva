@@ -3,11 +3,12 @@ import logging
 from discord.ext import commands
 from discord import Embed, Colour, __version__, File
 import aiohttp
-from silva.utilities import gbfwiki, misc
+from silva.utilities import gbfwiki, misc, wikimedia_cats
 from datetime import datetime
 import random
 import pytz
 import re
+from bs4 import BeautifulSoup
 
 
 class SilvaCmds(commands.Cog, name="GBF-related commands"):
@@ -315,3 +316,45 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
         except Exception as e:
             logging.warning(e)
             return await ctx.send("Couldn't embiggen at this time.")
+
+    @commands.command(name='cat', aliases=['catte', 'likeblhue'])
+    async def wikicat(self, ctx):
+        '''
+        Gets a random cat picture from Wikipedia.
+        '''
+        logging.info(f'{ctx.author} requested a cat picture.')
+        cat = wikimedia_cats.wikicats()
+        init_msg = await ctx.send('BETA: Getting a cat picture, one sec.')
+        try:
+            await cat.async_init()
+            artist = cat.info['user']
+            desc = BeautifulSoup(
+                cat.info['extmetadata']['ImageDescription']['value'],
+                features='html.parser').text
+            desc_url = cat.info['descriptionurl']
+            filename = desc_url.split(':')[-1].replace('_', ' ')
+            desc_surl = cat.info['descriptionshorturl']
+            picture = cat.info['thumburl']
+            await init_msg.delete()
+            msg_embed = Embed(
+                title=filename,
+                url=desc_surl,
+                color=Colour.dark_purple(),
+                description=desc)
+            msg_embed.set_author(name=artist)
+            msg_embed.set_image(url=picture)
+            return await ctx.send(embed=msg_embed)
+        except Exception as e:
+            try:
+                logging.warning(e)
+                logging.warning(f'cat info: {cat.info}')
+                logging.warning(f'cat breed: {cat.breed}')
+                logging.warning(f'cat images_list: {cat.images_list}')
+                logging.warning(f'cat list: {cat.cat_list}')
+                await init_msg.edit(
+                    content="BETA: Couldn't get a cat picture from Wikipedia.")
+            except Exception as e:
+                logging.warning(e)
+                logging.warning(cat)
+                await init_msg.edit(
+                    content="BETA: Couldn't get a cat picture from Wikipedia.")
