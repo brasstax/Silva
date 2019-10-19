@@ -122,6 +122,37 @@ class TextUtils():
                 new_text += '.'
         return new_text
 
+    def calculate_spark(self, crystals: int, tens: int, singles: int) -> (int, float):  # noqa
+        '''
+        Calculates the amount of draws available and the percentage toward
+        a spark draw.
+        :param crystals (int): the amount of crystals a player holds.
+        300 crystals for a single draw.
+        :param tens (int): How many ten-draw tickets a player has.
+        Worth ten draws.
+        :param singles (int): How many single-draw tickets a player has.
+        Worth one draw.
+        Returns (total_draws: int, spark_percentage: float)
+        '''
+        if not isinstance(crystals, int):
+            raise self.InvalidDrawsError('Crystals must be a whole number')
+        if not isinstance(tens, int):
+            raise self.InvalidDrawsError('Ten-draw tickets must be a whole number')  # noqa
+        if not isinstance(singles, int):
+            raise self.InvalidDrawsError('Single tickets must be a whole number')  # noqa
+        if crystals < 0:
+            raise self.InvalidDrawsError('Crystals cannot be less than 0')
+        if tens < 0:
+            raise self.InvalidDrawsError('Ten-draw tickets cannot be less than 0')  # noqa
+        if singles < 0:
+            raise self.InvalidDrawsError('Single tickets cannot be less than 0')  # noqa
+        draws = (crystals // 300) + tens + singles
+        spark_percentage = (draws / 300) * 100
+        return (draws, spark_percentage)
+
+    class InvalidDrawsError(ValueError):
+        pass
+
 
 class EmojiUtils():
     async def get_emoji(self, cdn: str, emoji_id: str):

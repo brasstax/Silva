@@ -17,6 +17,48 @@ class SilvaCmds(commands.Cog, name="GBF-related commands"):
         self.text_utils = misc.TextUtils()
         logging.info('Silva commands initialized.')
 
+    @commands.command(name='sparkcalc', aliases=['spark'])
+    async def calculate_spark(
+            self, ctx, crystals: int = 0, singles: int = 0, tens: int = 0):
+        '''
+        Calculates how many draws you have and how close you are to a spark.
+        :param crystals (int): the amount of crystals a player holds.
+        300 crystals for a single draw. 0 by default.
+        :param singles (int): How many single-draw tickets a player has.
+        Worth one draw. 0 by default.
+        :param tens (int): How many ten-draw tickets a player has.
+        Worth ten draws. 0 by default.
+        '''
+        guild = ctx.guild if ctx.guild else 'a direct message'
+        logging.info(f'sparkcalc requested by {ctx.author} in {guild}.')
+        try:
+            t = self.text_utils
+            draws, spark_percentage = t.calculate_spark(crystals, tens, singles)  # noqa
+        except misc.TextUtils.InvalidDrawsError as e:
+            return await ctx.send(f'{e}, {ctx.author.display_name}')
+        msg = f'{ctx.author.display_name},'
+        msg += f" you have {draws} roll{(lambda x: 's' if x != 1 else '')(draws)}."  # noqa
+        if spark_percentage >= 100 and spark_percentage < 200:
+            msg += ' You have one spark.'
+        elif spark_percentage >= 200:
+            msg += f' You have {spark_percentage // 100} sparks.'
+        else:
+            msg += f' You are {spark_percentage:.2f}% toward your next spark.'
+        if random.randint(1, 100) <= 20:
+            encouraging_msg = random.choice([
+                "You've got this!",
+                "Ganbaruby!",
+                ":ganbaruby:",
+                "I hope you like your spark!",
+                "May your spark shower you with the draws you want."
+            ])
+            msg += f" {encouraging_msg}"
+        if crystals == 0 and singles == 0 and tens == 0:
+            msg += (
+                "\n If you're not sure how this command works, check the"
+                ' help on "sparkcalc".')
+        return await ctx.send(msg)
+
     @commands.command(name='song', aliases=['tweyen'])
     async def song(self, ctx):
         '''
@@ -325,36 +367,37 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
         logging.info(f'{ctx.author} requested a cat picture.')
         cat = wikimedia_cats.wikicats()
         init_msg = await ctx.send('BETA: Getting a cat picture, one sec.')
-        try:
-            await cat.async_init()
-            artist = cat.info['user']
-            desc = BeautifulSoup(
-                cat.info['extmetadata']['ImageDescription']['value'],
-                features='html.parser').text
-            desc_url = cat.info['descriptionurl']
-            filename = desc_url.split(':')[-1].replace('_', ' ')
-            desc_surl = cat.info['descriptionshorturl']
-            picture = cat.info['thumburl']
-            await init_msg.delete()
-            msg_embed = Embed(
-                title=filename,
-                url=desc_surl,
-                color=Colour.dark_purple(),
-                description=desc)
-            msg_embed.set_author(name=artist)
-            msg_embed.set_image(url=picture)
-            return await ctx.send(embed=msg_embed)
-        except Exception as e:
+        async with ctx.channel.typing():
             try:
-                logging.warning(e)
-                logging.warning(f'cat info: {cat.info}')
-                logging.warning(f'cat breed: {cat.breed}')
-                logging.warning(f'cat images_list: {cat.images_list}')
-                logging.warning(f'cat list: {cat.cat_list}')
-                await init_msg.edit(
-                    content="BETA: Couldn't get a cat picture from Wikipedia.")
+                await cat.async_init()
+                artist = cat.info['user']
+                desc = BeautifulSoup(
+                    cat.info['extmetadata']['ImageDescription']['value'],
+                    features='html.parser').text
+                desc_url = cat.info['descriptionurl']
+                filename = desc_url.split(':')[-1].replace('_', ' ')
+                desc_surl = cat.info['descriptionshorturl']
+                picture = cat.info['thumburl']
+                await init_msg.delete()
+                msg_embed = Embed(
+                    title=filename,
+                    url=desc_surl,
+                    color=Colour.dark_purple(),
+                    description=desc)
+                msg_embed.set_author(name=artist)
+                msg_embed.set_image(url=picture)
+                return await ctx.send(embed=msg_embed)
             except Exception as e:
-                logging.warning(e)
-                logging.warning(cat)
-                await init_msg.edit(
-                    content="BETA: Couldn't get a cat picture from Wikipedia.")
+                try:
+                    logging.warning(e)
+                    logging.warning(f'cat info: {cat.info}')
+                    logging.warning(f'cat breed: {cat.breed}')
+                    logging.warning(f'cat images_list: {cat.images_list}')
+                    logging.warning(f'cat list: {cat.cat_list}')
+                    return await init_msg.edit(
+                        content="BETA: Couldn't get a cat picture from Wikipedia.")  # noqa
+                except Exception as e:
+                    logging.warning(e)
+                    logging.warning(cat)
+                    return await init_msg.edit(
+                        content="BETA: Couldn't get a cat picture from Wikipedia.")  # noqa
