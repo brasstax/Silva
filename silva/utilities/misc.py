@@ -146,7 +146,7 @@ class TextUtils():
             raise self.InvalidDrawsError('Ten-draw tickets cannot be less than 0')  # noqa
         if singles < 0:
             raise self.InvalidDrawsError('Single tickets cannot be less than 0')  # noqa
-        draws = (crystals // 300) + tens + singles
+        draws = (crystals // 300) + (tens * 10) + singles
         spark_percentage = (draws / 300) * 100
         return (draws, spark_percentage)
 

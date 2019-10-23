@@ -39,18 +39,25 @@ class SilvaCmds(commands.Cog, name="GBF-related commands"):
         msg = f'{ctx.author.display_name},'
         msg += f" you have {draws} roll{(lambda x: 's' if x != 1 else '')(draws)}."  # noqa
         if spark_percentage >= 100 and spark_percentage < 200:
-            msg += ' You have one spark.'
+            msg += " You have one spark and you're"
+            msg += f" {(spark_percentage % 100):.2f}%"
+            msg += " closer to a spark after."
         elif spark_percentage >= 200:
-            msg += f' You have {spark_percentage // 100} sparks.'
+            msg += f" You have {int(spark_percentage // 100)} sparks and"
+            msg += f" you're {(spark_percentage % 100):.2f}% closer"
+            msg += " to a spark after."
         else:
-            msg += f' You are {spark_percentage:.2f}% toward your next spark.'
-        if random.randint(1, 100) <= 20:
+            msg += f' You are {spark_percentage:.2f}% closer'
+            msg += ' to your next spark.'
+        if random.randint(1, 100) <= 25 or spark_percentage >= 100:
             encouraging_msg = random.choice([
                 "You've got this!",
                 "Ganbaruby!",
-                ":ganbaruby:",
+                "<:ganbaruby:275832773464293377>",
                 "I hope you like your spark!",
-                "May your spark shower you with the draws you want."
+                "May your spark shower you with the draws you want.",
+                "Silva, with her heart of silver, believes in you!",
+                "I'm excited for you and I can't wait for your spark."
             ])
             msg += f" {encouraging_msg}"
         if crystals == 0 and singles == 0 and tens == 0:
