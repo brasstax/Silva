@@ -418,6 +418,8 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
         '''
         Stick *really* wanted this command.
         '''
+        guild = ctx.guild if ctx.guild else 'a direct message'
+        logging.info(f'stick requested by {ctx.author} in {guild}.')
         name = ' '.join(name)
         if not name:
             msg = f"_headpats {ctx.author.display_name}_"
