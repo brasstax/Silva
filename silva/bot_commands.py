@@ -370,7 +370,7 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
             logging.warning(e)
             return await ctx.send("Couldn't embiggen at this time.")
 
-    @commands.command(name='cat', aliases=['catte', 'likeblhue'])
+    @commands.command(name='cat', aliases=['catte', 'likeblue'])
     async def wikicat(self, ctx):
         '''
         Gets a random cat picture from Wikipedia.
@@ -412,6 +412,23 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
                     logging.warning(cat)
                     return await init_msg.edit(
                         content="BETA: Couldn't get a cat picture from Wikipedia.")  # noqa
+
+    @commands.command(name='headpat', aliases=['stick'])
+    async def headpat(self, ctx, *name: str):
+        '''
+        Stick *really* wanted this command.
+        '''
+        name = ' '.join(name)
+        if not name:
+            msg = f"_headpats {ctx.author.display_name}_"
+            return await ctx.send(msg)
+        users = self.text_utils.user_searcher(self.bot, name)
+        if not users:
+            msg = f"{ctx.author.display_name}, I couldn't find any users with the name '{name}'."
+            msg += f" You can have a headpet anyway. _headpats {ctx.author.display_name}_"
+            return await ctx.send(msg)
+        msg = f"_headpats {', '.join([x.display_name for x in users])} and {ctx.author.display_name}_"
+        return await ctx.send(msg)
 
 
 class PronounCommands(commands.Cog, name='Pronoun commands'):
