@@ -236,7 +236,7 @@ class TextUtils():
             users = [x for x in bot.get_all_members() if x.name.lower() == username.lower()]
         if not users:
             name = re.escape(name)
-            users = [x for x in bot.get_all_members() if re.match(name.lower(), x.display_name.lower())]
+            users = [x for x in bot.get_all_members() if re.search(name.lower(), x.display_name.lower())]
         return users
 
     class InvalidDrawsError(ValueError):
