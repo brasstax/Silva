@@ -224,7 +224,7 @@ class TextUtils():
             discriminator = None
         return username.rstrip(), discriminator
 
-    def user_searcher(self, bot, name: str) -> List[any]:
+    def user_searcher(self, bot, name: str, max_users=5) -> List[any]:
         '''
         Searches for a username by either their username, their username
         and their numerical discriminator, or their nickname.
@@ -237,6 +237,8 @@ class TextUtils():
         if not users:
             name = re.escape(name)
             users = [x for x in bot.get_all_members() if re.search(name.lower(), x.display_name.lower())]
+        if len(users) > max_users:
+            raise ValueError('Too many users returned.')
         return users
 
     class InvalidDrawsError(ValueError):

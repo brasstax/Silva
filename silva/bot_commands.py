@@ -424,7 +424,10 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
         if not name:
             msg = f"_headpats {ctx.author.display_name}_"
             return await ctx.send(msg)
-        users = self.text_utils.user_searcher(self.bot, name)
+        try:
+            users = self.text_utils.user_searcher(self.bot, name)
+        except ValueError:
+            return await ctx.send('Please narrow down your search (use `username#id` if needed.)')
         if not users:
             msg = f"{ctx.author.display_name}, I couldn't find any users with the name '{name}'."
             msg += f" You can have a headpet anyway. _headpats {ctx.author.display_name}_"
@@ -452,7 +455,10 @@ class PronounCommands(commands.Cog, name='Pronoun commands'):
             users = [ctx.author]
         else:
             name = ' '.join(name)
-            users = self.text_utils.user_searcher(self.bot, name)
+            try:
+                users = self.text_utils.user_searcher(self.bot, name)
+            except ValueError:
+                return await ctx.send('Please narrow your search (use `username#id` if needed.)')
         if not users:
             await ctx.send(f'No user "{name}" found.')
         msg = ''
