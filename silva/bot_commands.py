@@ -414,7 +414,7 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
                         content="BETA: Couldn't get a cat picture from Wikipedia.")  # noqa
 
 
-class PronounCommands(commands.Cog, name='Misc. commands'):
+class PronounCommands(commands.Cog, name='Pronoun commands'):
     def __init__(self, bot):
         self.bot = bot
         self.db_utils = misc.Database(bot.conn)
