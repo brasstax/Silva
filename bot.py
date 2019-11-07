@@ -39,6 +39,7 @@ setattr(
 bot.add_cog(bot_commands.SilvaCmds(bot))
 bot.add_cog(bot_commands.MiscCommands(bot))
 bot.add_cog(bot_commands.AliasCommands(bot))
+bot.add_cog(bot_commands.PronounCommands(bot))
 
 twitter_config = ConfigParser()
 twitter_config.read(config['default']['twitter_tokens'])
@@ -57,6 +58,18 @@ async def on_connect():
         cmd: str = (
             "CREATE UNIQUE INDEX IF NOT EXISTS"
             " idx_positions_id ON aliases(id)"
+        )
+        await db.execute(cmd)
+        cmd: str = (
+            "CREATE TABLE IF NOT EXISTS pronouns"
+            " (id integer primary key autoincrement,"
+            " user text, he int DEFAULT 0,"
+            " she int DEFAULT 0, they int DEFAULT 0)"
+        )
+        await db.execute(cmd)
+        cmd: str = (
+            "CREATE UNIQUE INDEX IF NOT EXISTS"
+            " idx_positions_pronouns_id ON pronouns(id)"
         )
         await db.execute(cmd)
         await db.commit()

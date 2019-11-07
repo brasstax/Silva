@@ -33,11 +33,14 @@ class SilvaCmds(commands.Cog, name="GBF-related commands"):
         logging.info(f'sparkcalc requested by {ctx.author} in {guild}.')
         try:
             t = self.text_utils
-            draws, spark_percentage = t.calculate_spark(crystals, tens, singles)  # noqa
+            draws, spark_percentage = t.calculate_spark(crystals, tens, singles)
         except misc.TextUtils.InvalidDrawsError as e:
             return await ctx.send(f'{e}, {ctx.author.display_name}')
         msg = f'{ctx.author.display_name},'
-        msg += f" you have {draws} roll{(lambda x: 's' if x != 1 else '')(draws)}."  # noqa
+        msg += f" you have {crystals} crystal{(lambda x: 's' if x != 1 else '')(crystals)},"
+        msg += f" {tens} ten-draw ticket{(lambda x: 's' if x != 1 else '')(tens)},"
+        msg += f" and {singles} single-draw ticket{(lambda x: 's' if x != 1 else '')(singles)}."
+        msg += f" You have **{draws} roll{(lambda x: 's' if x != 1 else '')(draws)}**."
         if spark_percentage >= 100 and spark_percentage < 200:
             msg += " You have one spark and you're"
             msg += f" {(spark_percentage % 100):.2f}%"
@@ -54,6 +57,7 @@ class SilvaCmds(commands.Cog, name="GBF-related commands"):
                 "You've got this!",
                 "Ganbaruby!",
                 "<:ganbaruby:275832773464293377>",
+                "<:gobu:284812336580263938>",
                 "I hope you like your spark!",
                 "May your spark shower you with the draws you want.",
                 "Silva, with her heart of silver, believes in you!",
@@ -408,3 +412,93 @@ class MiscCommands(commands.Cog, name='Misc. commands'):
                     logging.warning(cat)
                     return await init_msg.edit(
                         content="BETA: Couldn't get a cat picture from Wikipedia.")  # noqa
+
+
+class PronounCommands(commands.Cog, name='Misc. commands'):
+    def __init__(self, bot):
+        self.bot = bot
+        self.db_utils = misc.Database(bot.conn)
+        self.text_utils = misc.TextUtils()
+        logging.info('Pronoun commands initialized.')
+
+    @commands.command(name='pronouns', aliases=['pronoun'])
+    async def get_pronoun(self, ctx, *name: str):
+        '''
+        Lists the pronouns for a given user.
+        :param name: Either the username or the display name of a user to look up.
+        '''
+        guild = ctx.guild if ctx.guild else 'a direct message'
+        logging.info(f'get_pronoun requested by {ctx.author} in {guild}.')
+        if not name:
+            users = [ctx.author]
+        else:
+            name = ' '.join(name)
+            users = self.text_utils.user_searcher(self.bot, name)
+        if not users:
+            await ctx.send(f'No user "{name}" found.')
+        msg = ''
+        for user in users:
+            username_full = f"{user.name}#{user.discriminator}"
+            try:
+                pronouns = await self.db_utils.get_pronouns(username_full)
+                if 1 not in pronouns.values():
+                    raise self.db_utils.MissingUserError()
+                msg += f"{user.display_name} uses the following pronouns:"
+                pronoun_list = []
+                if pronouns['he']:
+                    pronoun_list.append('he/him')
+                if pronouns['she']:
+                    pronoun_list.append('she/her')
+                if pronouns['they']:
+                    pronoun_list.append('they/them')
+                msg += f" {', '.join(pronoun_list)}"
+                msg += "\n"
+            except self.db_utils.MissingUserError:
+                msg += f"{user.display_name} has not set their pronouns yet."
+        return await ctx.send(msg)
+
+    @commands.command(name='addpronoun', aliases=['setpronoun'])
+    async def set_pronoun(self, ctx, pronoun):
+        '''
+        Adds your pronouns.
+        :param pronoun: one of "he/him", "she/her", "they/them".
+        '''
+        guild = ctx.guild if ctx.guild else 'a direct message'
+        logging.info(f'set_pronoun requested by {ctx.author} in {guild}.')
+        pronouns = ["he/him", "she/her", "they/them"]
+        if pronoun not in pronouns:
+            msg = f"{ctx.author.display_name}, pronouns should be one of the following:"
+            msg += ", ".join(pronouns)
+            return await ctx.send(msg)
+        username = f"{ctx.author.name}#{ctx.author.discriminator}"
+        if pronoun == "he/him":
+            await self.db_utils.set_pronouns(username, "he")
+        if pronoun == "she/her":
+            await self.db_utils.set_pronouns(username, "she")
+        if pronoun == "they/them":
+            await self.db_utils.set_pronouns(username, "they")
+        msg = f"{ctx.author.display_name}, I have added '{pronoun}' as your pronouns."
+        return await ctx.send(msg)
+
+    @commands.command(name='delpronoun', aliases=['rmpronoun'])
+    async def rm_pronoun(self, ctx, pronoun):
+        '''
+        Removes your pronouns.
+        :param pronoun: one of "he/him", "she/her", "they/them".
+        '''
+        guild = ctx.guild if ctx.guild else 'a direct message'
+        logging.info(f'rm_pronoun requested by {ctx.author} in {guild}.')
+        pronouns = ["he/him", "she/her", "they/them"]
+        if pronoun not in pronouns:
+            msg = f"{ctx.author.display_name}, pronouns should be one of the following:"
+            msg += ", ".join(pronouns)
+            return await ctx.send(msg)
+        username = f"{ctx.author.name}#{ctx.author.discriminator}"
+        if pronoun == "he/him":
+            await self.db_utils.rm_pronouns(username, "he")
+        if pronoun == "she/her":
+            await self.db_utils.rm_pronouns(username, "she")
+        if pronoun == "they/them":
+            await self.db_utils.rm_pronouns(username, "they")
+        msg = f"{ctx.author.display_name}, I have removed '{pronoun}' as one of your pronouns."
+        return await ctx.send(msg)

@@ -65,6 +65,66 @@ class Database():
     class AliasExistsError(Exception):
         pass
 
+    async def get_pronouns(self, user: str) -> Dict[str, int]:
+        cmd: str = '''
+        SELECT he, she, they FROM pronouns
+        WHERE user = ? LIMIT 1;
+        '''
+        async with aiosqlite.connect(self.conn) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(cmd, (user,)) as cursor:
+                row = await cursor.fetchone()
+        if not row:
+            raise self.MissingUserError('No user found.')
+        pronouns = {}
+        pronouns['he'] = row['he']
+        pronouns['she'] = row['she']
+        pronouns['they'] = row['they']
+        return pronouns
+
+    async def set_pronouns(self, user: str, pronoun: str) -> None:
+        # Can't parameterize column names
+        # (https://www.sqlite.org/cintro.html)
+        # So we're doing some basic checking here
+        # to make sure we're using a valid pronoun.
+        if pronoun not in ['he', 'she', 'they']:
+            raise ValueError('Pronoun not one of: he, she, they.')
+        try:
+            await self.get_pronouns(user)
+            cmd = f'''
+                UPDATE pronouns
+                    SET {pronoun} = 1
+                WHERE user = ?
+            '''
+        except self.MissingUserError:
+            cmd = f'''
+                INSERT INTO pronouns(user, {pronoun}) VALUES (?, 1)
+            '''
+        async with aiosqlite.connect(self.conn) as db:
+            await db.execute(cmd, (user,))
+            await db.commit()
+
+    async def rm_pronouns(self, user: str, pronoun: str) -> None:
+        if pronoun not in ['he', 'she', 'they']:
+            raise ValueError('Pronoun not one of: he, she, they.')
+        try:
+            await self.get_pronouns(user)
+            cmd = f'''
+                UPDATE pronouns
+                    SET {pronoun} = 0
+                WHERE user = ?
+            '''
+        except self.MissingUserError:
+            cmd = f'''
+                INSERT INTO pronouns(user, {pronoun}) VALUES (?, 0)
+            '''
+        async with aiosqlite.connect(self.conn) as db:
+            await db.execute(cmd, (user,))
+            await db.commit()
+
+    class MissingUserError(Exception):
+        pass
+
 
 class TextUtils():
     async def regex(self, conn: str, text: str) -> str:
@@ -149,6 +209,35 @@ class TextUtils():
         draws = (crystals // 300) + (tens * 10) + singles
         spark_percentage = (draws / 300) * 100
         return (draws, spark_percentage)
+
+    def username_parser(self, username: str):
+        '''
+        Parses a name to remove the last four discord discriminator numbers
+        and strip any trailing whitespace.
+        '''
+        match = re.search(r'#\d\d\d\d$', username)
+        if match:
+            discriminator = match.group()
+            username = username.split(discriminator)[0]
+            discriminator = discriminator[1:]
+        else:
+            discriminator = None
+        return username.rstrip(), discriminator
+
+    def user_searcher(self, bot, name: str) -> List[any]:
+        '''
+        Searches for a username by either their username, their username
+        and their numerical discriminator, or their nickname.
+        '''
+        username, discriminator = self.username_parser(name)
+        if discriminator:
+            users = [x for x in bot.get_all_members() if x.name.lower() == username.lower() and x.discriminator == discriminator]
+        else:
+            users = [x for x in bot.get_all_members() if x.name.lower() == username.lower()]
+        if not users:
+            name = re.escape(name)
+            users = [x for x in bot.get_all_members() if re.match(name.lower(), x.display_name.lower())]
+        return users
 
     class InvalidDrawsError(ValueError):
         pass
