@@ -63,13 +63,17 @@ async def on_connect():
         cmd: str = (
             "CREATE TABLE IF NOT EXISTS pronouns"
             " (id integer primary key autoincrement,"
-            " user text, he int DEFAULT 0,"
-            " she int DEFAULT 0, they int DEFAULT 0)"
+            " user text, user_id int, pronouns text DEFAULT 0)"
         )
         await db.execute(cmd)
         cmd: str = (
             "CREATE UNIQUE INDEX IF NOT EXISTS"
             " idx_positions_pronouns_id ON pronouns(id)"
+        )
+        await db.execute(cmd)
+        cmd: str = (
+            "CREATE UNIQUE INDEX IF NOT EXISTS"
+            " idx_positions_pronouns_user_id ON pronouns(user_id)"
         )
         await db.execute(cmd)
         await db.commit()

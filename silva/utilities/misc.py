@@ -65,61 +65,56 @@ class Database():
     class AliasExistsError(Exception):
         pass
 
-    async def get_pronouns(self, user: str) -> Dict[str, int]:
+    async def get_pronouns(self, user_id: int) -> Dict[str, int]:
         cmd: str = '''
-        SELECT he, she, they FROM pronouns
-        WHERE user = ? LIMIT 1;
+        SELECT pronouns FROM pronouns
+        WHERE user_id = ? LIMIT 1;
         '''
         async with aiosqlite.connect(self.conn) as db:
             db.row_factory = aiosqlite.Row
-            async with db.execute(cmd, (user,)) as cursor:
+            async with db.execute(cmd, (user_id,)) as cursor:
                 row = await cursor.fetchone()
         if not row:
             raise self.MissingUserError('No user found.')
-        pronouns = {}
-        pronouns['he'] = row['he']
-        pronouns['she'] = row['she']
-        pronouns['they'] = row['they']
+        pronouns = row['pronouns']
         return pronouns
 
-    async def set_pronouns(self, user: str, pronoun: str) -> None:
+    async def set_pronouns(self, user: str, user_id: int, pronouns: str, max_len=31) -> None:
         # Can't parameterize column names
         # (https://www.sqlite.org/cintro.html)
         # So we're doing some basic checking here
-        # to make sure we're using a valid pronoun.
-        if pronoun not in ['he', 'she', 'they']:
-            raise ValueError('Pronoun not one of: he, she, they.')
+        # to make sure users aren't putting in the gettysburg address.
+        if len(pronouns) >= max_len:
+            raise ValueError('Pronoun too many characters.')
         try:
-            await self.get_pronouns(user)
-            cmd = f'''
+            await self.get_pronouns(user_id)
+            cmd = '''
                 UPDATE pronouns
-                    SET {pronoun} = 1
-                WHERE user = ?
+                    SET pronouns = ?, user = ?
+                WHERE user_id = ?
             '''
         except self.MissingUserError:
-            cmd = f'''
-                INSERT INTO pronouns(user, {pronoun}) VALUES (?, 1)
+            cmd = '''
+                INSERT INTO pronouns(pronouns, user, user_id) VALUES (?, ?, ?)
             '''
         async with aiosqlite.connect(self.conn) as db:
-            await db.execute(cmd, (user,))
+            await db.execute(cmd, (pronouns, user, user_id,))
             await db.commit()
 
-    async def rm_pronouns(self, user: str, pronoun: str) -> None:
-        if pronoun not in ['he', 'she', 'they']:
-            raise ValueError('Pronoun not one of: he, she, they.')
+    async def rm_pronouns(self, user_id: str) -> None:
         try:
-            await self.get_pronouns(user)
-            cmd = f'''
+            await self.get_pronouns(user_id)
+            cmd = '''
                 UPDATE pronouns
-                    SET {pronoun} = 0
-                WHERE user = ?
+                    SET pronouns = 0
+                WHERE user_id = ?
             '''
         except self.MissingUserError:
-            cmd = f'''
-                INSERT INTO pronouns(user, {pronoun}) VALUES (?, 0)
+            cmd = '''
+                INSERT INTO pronouns(user_id, pronouns) VALUES (?, 0)
             '''
         async with aiosqlite.connect(self.conn) as db:
-            await db.execute(cmd, (user,))
+            await db.execute(cmd, (user_id,))
             await db.commit()
 
     class MissingUserError(Exception):
