@@ -13,7 +13,7 @@ class ScheduledEvents():
     def __init__(self, bot):
         self.bot = bot
 
-    async def update_events(self, interval: int=12):
+    async def update_events(self, interval: int = 1):
         '''
         Updates the events channel.
         :interval (int): The interval in hours to update.
