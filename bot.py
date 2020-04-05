@@ -36,6 +36,8 @@ setattr(
     bot, 'events_channel',
     int(config['twitter']['discord_events_channel_id']))
 
+setattr(bot, 'is_following', False)
+
 bot.add_cog(bot_commands.SilvaCmds(bot))
 bot.add_cog(bot_commands.MiscCommands(bot))
 bot.add_cog(bot_commands.AliasCommands(bot))
@@ -77,6 +79,14 @@ async def on_connect():
         )
         await db.execute(cmd)
         await db.commit()
+
+
+@bot.event
+async def on_ready():
+    logging.info(f'Logged in as {bot.user.name} ({bot.user.id})')
+    logging.info('------')
+    activity = discord.Game(name=f'{COMMAND_PREFIX}help for help')
+    await bot.change_presence(status=discord.Status.online, activity=activity)
     to_follow_str = config['twitter']['twitter_user_id'].split(',')
     to_follow = [int(item) for item in to_follow_str]
     bot.twitter = granblue_twitter.Twitter(
@@ -88,14 +98,6 @@ async def on_connect():
         discord_channel_id=config['twitter']['discord_news_feed_channel_id'],
         twitter_user_id=to_follow)
     await bot.twitter.follow()
-
-
-@bot.event
-async def on_ready():
-    logging.info(f'Logged in as {bot.user.name} ({bot.user.id})')
-    logging.info('------')
-    activity = discord.Game(name=f'{COMMAND_PREFIX}help for help')
-    await bot.change_presence(status=discord.Status.online, activity=activity)
 
 
 @bot.event
