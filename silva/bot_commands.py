@@ -91,8 +91,7 @@ class SilvaCmds(commands.Cog, name="GBF-related commands"):
                         'Heyyyyyy. Another beer! I ran out!',
                         'I love beer. More beeeeeeeeeeer!',
                         'Zzzzzz...',
-                        'Beer! Beer! Beer! Beer! Beer!',
-                        "We're never going to get SSR Reinhardtzar!"
+                        'Beer! Beer! Beer! Beer! Beer!'
                     ]
                 )
                 new_text += " (Silva has had a bit too much to drink."
