@@ -78,6 +78,17 @@ async def on_connect():
             " idx_positions_pronouns_user_id ON pronouns(user_id)"
         )
         await db.execute(cmd)
+        cmd: str = (
+            "CREATE TABLE IF NOT EXISTS hlraids"
+            " (id integer primary key autoincrement,"
+            " raid_group text)"
+        )
+        await db.execute(cmd)
+        cmd: str = (
+            "CREATE UNIQUE INDEX IF NOT EXISTS"
+            " idx_raid_group ON hlraids(raid_group)"
+        )
+        await db.execute(cmd)
         await db.commit()
 
 
