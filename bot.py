@@ -86,7 +86,7 @@ async def on_connect():
         await db.execute(cmd)
         cmd: str = (
             "CREATE UNIQUE INDEX IF NOT EXISTS"
-            " idx_raid_group ON raidroles(name)"
+            " idx_raid_group ON raidroles(role_id)"
         )
         await db.execute(cmd)
         await db.commit()
