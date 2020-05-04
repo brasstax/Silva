@@ -137,7 +137,7 @@ class Database():
                 row = await cursor.fetchone()
         if row:
             cmd = '''
-            UPDATE TABLE raidroles
+            UPDATE raidroles
             SET role_name = ?
             WHERE role_id = ?
             '''
@@ -154,7 +154,7 @@ class Database():
 
     async def rm_raid_role(self, role) -> None:
         cmd = """
-        SELECT * from raidroles WHERE role_id = ?
+        SELECT * from raidroles WHERE name = ?
         """
         async with aiosqlite.connect(self.conn) as db:
             db.row_factory = aiosqlite.Row
