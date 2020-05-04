@@ -186,7 +186,7 @@ class Commands(commands.Cog, name="GBF-related commands"):
     @commands.command(name="add-my-role", aliases=['addmyrole'])
     async def add_raid_role(self, ctx, *, role_name: str):
         '''
-        Adds a raid role to yourself.
+        Adds a role to yourself. The role must exist in the #how_to_raid channel.
         '''
         guild = ctx.guild if ctx.guild else 'a direct message'
         logging.info(f'add-my-role requested by {ctx.author} in {guild} to add role "{role_name}" to themselves.')
@@ -196,7 +196,7 @@ class Commands(commands.Cog, name="GBF-related commands"):
         if role_name.lower() not in role_names:
             logging.warning(f"{ctx.author} tried to add {role_name} but that's not in the role database.")
             return await message.add_reaction("❌")
-        role_id = [role['role_id'] for role in roles if role['role_name'].lower() == role_name.lower()]
+        role_id = [role['role_id'] for role in roles if role['role_name'].lower() == role_name.lower()][0]
         role = message.guild.get_role(role_id)
         await ctx.author.add_roles(role)
         return await message.add_reaction("🆗")
@@ -208,6 +208,16 @@ class Commands(commands.Cog, name="GBF-related commands"):
         '''
         guild = ctx.guild if ctx.guild else 'a direct message'
         logging.info(f'del-my-raid-role requested by {ctx.author} in {guild} to remove role "{role_name}" from themselves.')
+        roles = await self.db_utils.get_raid_roles()
+        message = ctx.message
+        role_names = [role['role_name'].lower() for role in roles]
+        if role_name.lower() not in role_names:
+            logging.warning(f"{ctx.author} tried to remove {role_name} from themselves, but that's not in the role database.")
+            return await message.add_reaction("❌")
+        role_id = [role['role_id'] for role in roles if role['role_name'].lower() == role_name.lower()][0]
+        role = message.guild.get_role(role_id)
+        await ctx.author.remove_roles(role)
+        return await message.add_reaction("🆗")
 
     @commands.command(name='list-db-roles', aliases=['lsdbroles'])
     @commands.has_any_role("admin", "admin 2.0", "operator")
