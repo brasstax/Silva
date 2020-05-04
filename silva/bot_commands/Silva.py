@@ -220,7 +220,7 @@ class Commands(commands.Cog, name="GBF-related commands"):
         return await message.add_reaction("🆗")
 
     @commands.command(name='list-db-roles', aliases=['lsdbroles'])
-    @commands.has_any_role("admin", "admin 2.0", "operator")
+    @commands.has_any_role("admin", "admin 2.0", "officer")
     async def list_db_raid_roles(self, ctx):
         guild = ctx.guild if ctx.guild else 'a direct message'
         logging.info(f'list-db-raid-roles requested by {ctx.author} in {guild}.')
@@ -233,7 +233,7 @@ class Commands(commands.Cog, name="GBF-related commands"):
         return await message.add_reaction("🆗")
 
     @commands.command(name="add-db-role", aliases=["adddbrole"])
-    @commands.has_any_role("admin", "admin 2.0", "operator")
+    @commands.has_any_role("admin", "admin 2.0")
     async def new_raid_role_db(self, ctx, *, role_name: str):
         '''
         Adds a new raid role to the database.
@@ -260,7 +260,7 @@ class Commands(commands.Cog, name="GBF-related commands"):
             return await message.add_reaction("❌")
 
     @commands.command(name="rm-db-role", aliases=["deldbrole", "rmdbrole"])
-    @commands.has_any_role("admin", "admin 2.0", "operator")
+    @commands.has_any_role("admin", "admin 2.0")
     async def rm_raid_role_db(self, ctx, *, role_name: str):
         '''
         Removes a raid role from the database.
