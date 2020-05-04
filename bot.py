@@ -2,7 +2,7 @@
 from configparser import ConfigParser
 import logging
 from discord.ext import commands
-from silva import bot_commands
+from silva.bot_commands import Silva, Aliases, Misc, Pronouns
 from silva.utilities import granblue_twitter, scheduled_commands
 import discord
 import aiosqlite
@@ -38,10 +38,10 @@ setattr(
 
 setattr(bot, 'is_following', False)
 
-bot.add_cog(bot_commands.SilvaCmds(bot))
-bot.add_cog(bot_commands.MiscCommands(bot))
-bot.add_cog(bot_commands.AliasCommands(bot))
-bot.add_cog(bot_commands.PronounCommands(bot))
+bot.add_cog(Silva.Commands(bot))
+bot.add_cog(Misc.Commands(bot))
+bot.add_cog(Aliases.Commands(bot))
+bot.add_cog(Pronouns.Commands(bot))
 
 twitter_config = ConfigParser()
 twitter_config.read(config['default']['twitter_tokens'])
