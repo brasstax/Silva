@@ -183,13 +183,13 @@ class Commands(commands.Cog, name="GBF-related commands"):
             await msg.edit(
                 content="I couldn't retrieve the events at this time.")
 
-    @commands.command(name="add-my-raid-role", aliases=['addmyraidrole'])
+    @commands.command(name="add-my-role", aliases=['addmyrole'])
     async def add_raid_role(self, ctx, *, role_name: str):
         '''
         Adds a raid role to yourself.
         '''
         guild = ctx.guild if ctx.guild else 'a direct message'
-        logging.info(f'add-my-raid-role requested by {ctx.author} in {guild} to add role "{role_name}" to themselves.')
+        logging.info(f'add-my-role requested by {ctx.author} in {guild} to add role "{role_name}" to themselves.')
         roles = await self.db_utils.get_raid_roles()
         message = ctx.message
         role_names = [role['role_name'].lower() for role in roles]
@@ -201,16 +201,15 @@ class Commands(commands.Cog, name="GBF-related commands"):
         await ctx.author.add_roles(role)
         return await message.add_reaction("🆗")
 
-    @commands.command(name="del-my-raid-role", aliases=['rmmyraidrole', 'delmyraidrole'])
+    @commands.command(name="del-my-role", aliases=['rmmyrole', 'delmyrole'])
     async def rm_raid_role(self, ctx, *, role_name: str):
         '''
         Removes a raid role from yourself.
         '''
         guild = ctx.guild if ctx.guild else 'a direct message'
         logging.info(f'del-my-raid-role requested by {ctx.author} in {guild} to remove role "{role_name}" from themselves.')
-        pass
 
-    @commands.command(name='list-db-raid-roles', aliases=['lsdbraidroles'])
+    @commands.command(name='list-db-roles', aliases=['lsdbroles'])
     @commands.has_any_role("admin", "admin 2.0", "operator")
     async def list_db_raid_roles(self, ctx):
         guild = ctx.guild if ctx.guild else 'a direct message'
@@ -223,7 +222,7 @@ class Commands(commands.Cog, name="GBF-related commands"):
         await ctx.send(msg)
         return await message.add_reaction("🆗")
 
-    @commands.command(name="add-db-raid-role", aliases=["adddbraidrole"])
+    @commands.command(name="add-db-role", aliases=["adddbrole"])
     @commands.has_any_role("admin", "admin 2.0", "operator")
     async def new_raid_role_db(self, ctx, *, role_name: str):
         '''
@@ -250,7 +249,7 @@ class Commands(commands.Cog, name="GBF-related commands"):
             logging.warning(e)
             return await message.add_reaction("❌")
 
-    @commands.command(name="rm-db-raid-role", aliases=["deldbraidrole", "rmdbraidrole"])
+    @commands.command(name="rm-db-role", aliases=["deldbrole", "rmdbrole"])
     @commands.has_any_role("admin", "admin 2.0", "operator")
     async def rm_raid_role_db(self, ctx, *, role_name: str):
         '''
