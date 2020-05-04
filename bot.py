@@ -79,14 +79,14 @@ async def on_connect():
         )
         await db.execute(cmd)
         cmd: str = (
-            "CREATE TABLE IF NOT EXISTS hlraids"
+            "CREATE TABLE IF NOT EXISTS raidroles"
             " (id integer primary key autoincrement,"
-            " raid_group text)"
+            " role_id int, role_name text)"
         )
         await db.execute(cmd)
         cmd: str = (
             "CREATE UNIQUE INDEX IF NOT EXISTS"
-            " idx_raid_group ON hlraids(raid_group)"
+            " idx_raid_group ON raidroles(name)"
         )
         await db.execute(cmd)
         await db.commit()

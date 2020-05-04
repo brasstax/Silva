@@ -12,6 +12,7 @@ import pytz
 class Commands(commands.Cog, name="GBF-related commands"):
     def __init__(self, bot):
         self.bot = bot
+        self.db_utils = misc.Database(bot.conn)
         self.text_utils = misc.TextUtils()
         logging.info('Silva commands initialized.')
 
@@ -181,3 +182,79 @@ class Commands(commands.Cog, name="GBF-related commands"):
             logging.warning(f'Could not retrieve events: {e}')
             await msg.edit(
                 content="I couldn't retrieve the events at this time.")
+
+    @commands.command(name="add-my-raid-role", aliases=['addmyraidrole'])
+    async def add_raid_role(self, ctx, *, role: str):
+        '''
+        Adds a raid role to yourself.
+        '''
+        guild = ctx.guild if ctx.guild else 'a direct message'
+        logging.info(f'add-my-raid-role requested by {ctx.author} in {guild}.')
+        roles = await self.db_utils.get_raid_roles()
+        pass
+
+    @commands.command(name="del-my-raid-role", aliases=['rmmyraidrole', 'delmyraidrole'])
+    async def rm_raid_role(self, ctx, *, role: str):
+        '''
+        Removes a raid role from yourself.
+        '''
+        guild = ctx.guild if ctx.guild else 'a direct message'
+        logging.info(f'del-my-raid-role requested by {ctx.author} in {guild}.')
+        pass
+
+    @commands.command(name='list-db-raid-roles', aliases=['lsdbraidroles'])
+    @commands.has_any_role("admin", "admin 2.0", "operator")
+    async def list_db_raid_roles(self, ctx):
+        guild = ctx.guild if ctx.guild else 'a direct message'
+        logging.info(f'list-db-raid-roles requested by {ctx.author} in {guild}.')
+        message = ctx.message
+        roles = await self.db_utils.get_raid_roles()
+        logging.info(roles)
+        msg = "The following raid roles exist: "
+        for role in roles:
+            msg += f"**{role['role_name']}**{'.' if roles[-1]['role_name'] == role['role_name'] else ', '}"
+        await ctx.send(msg)
+        return await message.add_reaction("🆗")
+
+    @commands.command(name="add-db-raid-role", aliases=["adddbraidrole"])
+    @commands.has_any_role("admin", "admin 2.0", "operator")
+    async def new_raid_role_db(self, ctx, *, role_name: str):
+        '''
+        Adds a new raid role to the database.
+        The raid role still has to actually exist in Discord for user-facing
+        add/remove raid role commands to work.
+        '''
+        guild = ctx.guild if ctx.guild else 'a direct message'
+        logging.info(f'add-db-raid-role requested by {ctx.author} in {guild}.')
+        message = ctx.message
+        role = [role for role in message.guild.roles if role.name.lower() == role_name.lower()]
+        if len(role) < 1:
+            await ctx.send(f"Role '{role_name}' does not exist on this server.")
+            raise ValueError(f"Role '{role_name}' does not exist on this server.")
+        role = role[0]
+        try:
+            await self.db_utils.add_raid_role(role.id, role.name)
+            logging.info(f'{ctx.author} added role "{role_name}" to role database.')
+            return await message.add_reaction("🆗")
+        except misc.Database.DuplicateRoleError as e:
+            logging.warning(e)
+            return await ctx.send(e)
+        except Exception as e:
+            logging.warning(e)
+            return await message.add_reaction("❌")
+
+    @commands.command(name="rm-db-raid-role", aliases=["deldbraidrole", "rmdbraidrole"])
+    @commands.has_any_role("admin", "admin 2.0", "operator")
+    async def rm_raid_role_db(self, ctx, *, role: str):
+        '''
+        Removes a raid role from the database.
+        '''
+        guild = ctx.guild if ctx.guild else 'a direct message'
+        logging.info(f'rm-db-raid-role requested by {ctx.author} in {guild}.')
+        message = ctx.message
+        try:
+            await self.db_utils.rm_raid_role(role)
+            return await message.add_reaction("🆗")
+        except misc.Database.InvalidRoleError as e:
+            logging.warning(e)
+            return await ctx.send(e)

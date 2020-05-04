@@ -117,7 +117,65 @@ class Database():
             await db.execute(cmd, (user_id,))
             await db.commit()
 
+    async def get_raid_roles(self) -> List[str]:
+        cmd: str = '''
+        SELECT * from raidroles
+        '''
+        async with aiosqlite.connect(self.conn) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(cmd,) as cursor:
+                row = await cursor.fetchall()
+        return row
+
+    async def add_raid_role(self, role_id, role_name) -> None:
+        cmd = """
+        SELECT * from raidroles WHERE role_id = ?
+        """
+        async with aiosqlite.connect(self.conn) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(cmd, (role_id,)) as cursor:
+                row = await cursor.fetchone()
+        if row:
+            cmd = '''
+            UPDATE TABLE raidroles
+            SET role_name = ?
+            WHERE role_id = ?
+            '''
+            async with aiosqlite.connect(self.conn) as db:
+                await db.execute(cmd, (role_name, role_id,))
+                await db.commit()
+            raise self.DuplicateRoleError(f'Role "{role_name}" is already in the database.')
+        cmd = '''
+            INSERT INTO raidroles(role_id, role_name) values (?, ?)
+        '''
+        async with aiosqlite.connect(self.conn) as db:
+            await db.execute(cmd, (role_id, role_name,))
+            await db.commit()
+
+    async def rm_raid_role(self, role) -> None:
+        cmd = """
+        SELECT * from raidroles WHERE name = ?
+        """
+        async with aiosqlite.connect(self.conn) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(cmd, (role,)) as cursor:
+                row = await cursor.fetchone()
+        if not row:
+            raise self.InvalidRoleError(f'Role "{role}" is not in the database.')
+        cmd = '''
+            DELETE FROM raidroles WHERE role_id = ?
+        '''
+        async with aiosqlite.connect(self.conn) as db:
+            await db.execute(cmd, (role,))
+            await db.commit()
+
     class MissingUserError(Exception):
+        pass
+
+    class DuplicateRoleError(ValueError):
+        pass
+
+    class InvalidRoleError(ValueError):
         pass
 
 
