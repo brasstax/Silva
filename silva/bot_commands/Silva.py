@@ -184,22 +184,30 @@ class Commands(commands.Cog, name="GBF-related commands"):
                 content="I couldn't retrieve the events at this time.")
 
     @commands.command(name="add-my-raid-role", aliases=['addmyraidrole'])
-    async def add_raid_role(self, ctx, *, role: str):
+    async def add_raid_role(self, ctx, *, role_name: str):
         '''
         Adds a raid role to yourself.
         '''
         guild = ctx.guild if ctx.guild else 'a direct message'
-        logging.info(f'add-my-raid-role requested by {ctx.author} in {guild}.')
+        logging.info(f'add-my-raid-role requested by {ctx.author} in {guild} to add role "{role_name}" to themselves.')
         roles = await self.db_utils.get_raid_roles()
-        pass
+        message = ctx.message
+        role_names = [role['role_name'].lower() for role in roles]
+        if role_name.lower() not in role_names:
+            logging.warning(f"{ctx.author} tried to add {role_name} but that's not in the role database.")
+            return await message.add_reaction("❌")
+        role_id = [role['role_id'] for role in roles if role['role_name'].lower() == role_name.lower()]
+        role = message.guild.get_role(role_id)
+        await ctx.author.add_roles(role)
+        return await message.add_reaction("🆗")
 
     @commands.command(name="del-my-raid-role", aliases=['rmmyraidrole', 'delmyraidrole'])
-    async def rm_raid_role(self, ctx, *, role: str):
+    async def rm_raid_role(self, ctx, *, role_name: str):
         '''
         Removes a raid role from yourself.
         '''
         guild = ctx.guild if ctx.guild else 'a direct message'
-        logging.info(f'del-my-raid-role requested by {ctx.author} in {guild}.')
+        logging.info(f'del-my-raid-role requested by {ctx.author} in {guild} to remove role "{role_name}" from themselves.')
         pass
 
     @commands.command(name='list-db-raid-roles', aliases=['lsdbraidroles'])
