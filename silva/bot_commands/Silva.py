@@ -209,7 +209,6 @@ class Commands(commands.Cog, name="GBF-related commands"):
         logging.info(f'list-db-raid-roles requested by {ctx.author} in {guild}.')
         message = ctx.message
         roles = await self.db_utils.get_raid_roles()
-        logging.info(roles)
         msg = "The following raid roles exist: "
         for role in roles:
             msg += f"**{role['role_name']}**{'.' if roles[-1]['role_name'] == role['role_name'] else ', '}"
@@ -245,16 +244,24 @@ class Commands(commands.Cog, name="GBF-related commands"):
 
     @commands.command(name="rm-db-raid-role", aliases=["deldbraidrole", "rmdbraidrole"])
     @commands.has_any_role("admin", "admin 2.0", "operator")
-    async def rm_raid_role_db(self, ctx, *, role: str):
+    async def rm_raid_role_db(self, ctx, *, role_name: str):
         '''
         Removes a raid role from the database.
         '''
         guild = ctx.guild if ctx.guild else 'a direct message'
         logging.info(f'rm-db-raid-role requested by {ctx.author} in {guild}.')
         message = ctx.message
+        role = [role for role in message.guild.roles if role.name.lower() == role_name.lower()]
+        if len(role) < 1:
+            await ctx.send(f"Role '{role_name}' does not exist on this server.")
+            raise ValueError(f"Role '{role_name}' does not exist on this server.")
+        role = role[0]
         try:
-            await self.db_utils.rm_raid_role(role)
+            await self.db_utils.rm_raid_role(role.id)
             return await message.add_reaction("🆗")
         except misc.Database.InvalidRoleError as e:
             logging.warning(e)
-            return await ctx.send(e)
+            return await ctx.send(f"Role '{role_name}' is not in the database.")
+        except Exception as e:
+            logging.warning(e)
+            return await message.add_reaction("❌")
