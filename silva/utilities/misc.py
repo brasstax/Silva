@@ -154,7 +154,7 @@ class Database():
 
     async def rm_raid_role(self, role) -> None:
         cmd = """
-        SELECT * from raidroles WHERE role_name = ?
+        SELECT * from raidroles WHERE role_id = ?
         """
         async with aiosqlite.connect(self.conn) as db:
             db.row_factory = aiosqlite.Row
