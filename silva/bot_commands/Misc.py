@@ -7,7 +7,6 @@ from datetime import datetime
 import pytz
 import re
 from bs4 import BeautifulSoup
-import pdb
 
 
 class Commands(commands.Cog, name='Misc. commands'):
@@ -135,7 +134,6 @@ class Commands(commands.Cog, name='Misc. commands'):
         cat = wikimedia_cats.wikicats()
         init_msg = await ctx.send('BETA: Getting a cat picture, one sec.')
         async with ctx.channel.typing():
-            pdb.set_trace()
             await cat.async_init()
             try:
                 artist = cat.info['user']
