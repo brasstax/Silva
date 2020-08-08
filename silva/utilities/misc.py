@@ -263,6 +263,22 @@ class TextUtils():
         spark_percentage = (draws / 300) * 100
         return (draws, spark_percentage)
 
+    def calculate_skin_spark(self, crystals: int) -> (int, float):  # noqa
+        '''
+        Calculates the amount of draws available and the percentage toward
+        a skin spark draw.
+        :param crystals (int): the amount of crystals a player holds.
+        200 crystals for a single draw.
+        Returns (total_draws: int, spark_percentage: float)
+        '''
+        if not isinstance(crystals, int):
+            raise self.InvalidDrawsError('Crystals must be a whole number')
+        if crystals < 0:
+            raise self.InvalidDrawsError('Crystals cannot be less than 0')
+        draws = (crystals // 200)
+        spark_percentage = (crystals / 40000) * 100
+        return (draws, spark_percentage)
+
     def username_parser(self, username: str):
         '''
         Parses a name to remove the last four discord discriminator numbers
