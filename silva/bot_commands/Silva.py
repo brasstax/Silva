@@ -87,13 +87,13 @@ class Commands(commands.Cog, name="GBF-related commands"):
             return await ctx.send(f'{e}, {ctx.author.display_name}')
         msg = f'{ctx.author.display_name},'
         msg += f" you have {crystals} crystal{(lambda x: 's' if x != 1 else '')(crystals)}."
-        msg += f" You have **{draws} roll{(lambda x: 's' if x != 1 else '')(draws)}**."
+        msg += f" You have **{draws} skin roll{(lambda x: 's' if x != 1 else '')(draws)}**."
         if spark_percentage >= 100 and spark_percentage < 200:
-            msg += " You have one spark and you're"
+            msg += " You have one skin spark and you're"
             msg += f" {(spark_percentage % 100):.2f}%"
             msg += " closer to a spark after."
         elif spark_percentage >= 200:
-            msg += f" You have {int(spark_percentage // 100)} sparks and"
+            msg += f" You have {int(spark_percentage // 100)} skin sparks and"
             msg += f" you're {(spark_percentage % 100):.2f}% closer"
             msg += " to a spark after."
         else:
@@ -105,16 +105,16 @@ class Commands(commands.Cog, name="GBF-related commands"):
                 "Ganbaruby!",
                 "<:ganbaruby:275832773464293377>",
                 "<:gobu:284812336580263938>",
-                "I hope you like your spark!",
-                "May your spark shower you with the draws you want.",
+                "I hope you like your new skin!",
+                "May your skin spark shower you with the draws you want.",
                 "Silva, with her heart of silver, believes in you!",
-                "I'm excited for you and I can't wait for your spark."
+                "I'm excited for you and I can't wait for your skin spark."
             ])
             msg += f" {encouraging_msg}"
         if crystals == 0:
             msg += (
                 "\n If you're not sure how this command works, check the"
-                ' help on "sparkcalc".')
+                ' help on "skinsparkcalc".')
         return await ctx.send(msg)
 
     @commands.command(name='song', aliases=['tweyen'])
