@@ -87,7 +87,7 @@ class Commands(commands.Cog, name="GBF-related commands"):
             return await ctx.send(f'{e}, {ctx.author.display_name}')
         msg = f'{ctx.author.display_name},'
         msg += f" you have {crystals} crystal{(lambda x: 's' if x != 1 else '')(crystals)}."
-        msg += f" You have **{draws} skin roll{(lambda x: 's' if x != 1 else '')(draws)}**."
+        msg += f" You have **{draws} skin gacha draw{(lambda x: 's' if x != 1 else '')(draws)}**."
         if spark_percentage >= 100 and spark_percentage < 200:
             msg += " You have one skin spark and you're"
             msg += f" {(spark_percentage % 100):.2f}%"
