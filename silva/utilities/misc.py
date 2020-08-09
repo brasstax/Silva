@@ -279,6 +279,23 @@ class TextUtils():
         spark_percentage = (crystals / 40000) * 100
         return (draws, spark_percentage)
 
+    def no_if_zero(self, number: int) -> str:
+        '''
+        Returns either the string version of an integer if the integer
+        isn't a zero, or the word "no" if the integer is a zero.
+        '''
+        return str(number) if number != 0 else "no"
+
+    def is_plural(self, number: int) -> str:
+        '''
+        Returns either an 's' if the number provided is not equal to 1,
+        or '' if the number is 1.
+        Technically I could use the inflect package instead to handle cases
+        where words need to end in 'es', but this is sufficient for my use
+        case.
+        '''
+        return "" if number == 1 else "s"
+
     def username_parser(self, username: str):
         '''
         Parses a name to remove the last four discord discriminator numbers
