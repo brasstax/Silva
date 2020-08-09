@@ -69,8 +69,8 @@ class Commands(commands.Cog, name="GBF-related commands"):
                 ' help on "sparkcalc".')
         return await ctx.send(msg)
 
-    @commands.command(name='skinsparkcalc', aliases=['skincalc'])
-    async def calculate_spark(
+    @commands.command(name='skinsparkcalc', aliases=['skincalc', 'skinspark'])
+    async def calculate_skin_spark(
             self, ctx, crystals: int = 0):
         '''
         Calculates how many draws you have and how close you are to a spark
@@ -89,11 +89,11 @@ class Commands(commands.Cog, name="GBF-related commands"):
         msg += f" you have {crystals} crystal{(lambda x: 's' if x != 1 else '')(crystals)}."
         msg += f" You have **{draws} skin gacha draw{(lambda x: 's' if x != 1 else '')(draws)}**."
         if spark_percentage >= 100 and spark_percentage < 200:
-            msg += " You have one skin spark and you're"
+            msg += " You have one skin gacha spark and you're"
             msg += f" {(spark_percentage % 100):.2f}%"
             msg += " closer to a spark after."
         elif spark_percentage >= 200:
-            msg += f" You have {int(spark_percentage // 100)} skin sparks and"
+            msg += f" You have {int(spark_percentage // 100)} skin gacha sparks and"
             msg += f" you're {(spark_percentage % 100):.2f}% closer"
             msg += " to a spark after."
         else:
