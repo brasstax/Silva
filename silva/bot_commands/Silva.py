@@ -105,10 +105,10 @@ class Commands(commands.Cog, name="GBF-related commands"):
                 "Ganbaruby!",
                 "<:ganbaruby:275832773464293377>",
                 "<:gobu:284812336580263938>",
-                "I hope you like your new skin!",
-                "May your skin spark shower you with the draws you want.",
+                "I hope you like your spark!",
+                "May your spark shower you with the costumes you want.",
                 "Silva, with her heart of silver, believes in you!",
-                "I'm excited for you and I can't wait for your skin spark."
+                "I'm excited for you and I can't wait for your spark."
             ])
             msg += f" {encouraging_msg}"
         if crystals == 0:
