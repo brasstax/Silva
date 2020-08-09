@@ -10,8 +10,8 @@ import asyncio
 import argparse
 
 loop = asyncio.get_event_loop()
-parser = argparse.ArgumentParser(description='A Granblue Fantasy discord bot.')
-parser.add_argument('--config', '-c', type=str, default='config.ini')
+parser = argparse.ArgumentParser(description="A Granblue Fantasy discord bot.")
+parser.add_argument("--config", "-c", type=str, default="config.ini")
 args = parser.parse_args()
 config_file = args.config
 
@@ -21,22 +21,21 @@ logging.basicConfig(level=logging.INFO, format=log_format)
 config = ConfigParser()
 config.read(config_file)
 
-with open(config['default']['discord_token']) as fp:
+with open(config["default"]["discord_token"]) as fp:
     TOKEN = fp.read().strip()
-COMMAND_PREFIX = config['default']['command_prefix']
+COMMAND_PREFIX = config["default"]["command_prefix"]
 
 bot = commands.Bot(
     command_prefix=commands.when_mentioned_or(COMMAND_PREFIX),
     description="The best sniper. She'll drink you under the table.",
-    case_insensitive=True)
-bot.conn = 'aliases.sqlite3'
-bot.events_channel = config['twitter']['discord_news_feed_channel_id']
+    case_insensitive=True,
+)
+bot.conn = "aliases.sqlite3"
+bot.events_channel = config["twitter"]["discord_news_feed_channel_id"]
 
-setattr(
-    bot, 'events_channel',
-    int(config['twitter']['discord_events_channel_id']))
+setattr(bot, "events_channel", int(config["twitter"]["discord_events_channel_id"]))
 
-setattr(bot, 'is_following', False)
+setattr(bot, "is_following", False)
 
 bot.add_cog(Silva.Commands(bot))
 bot.add_cog(Misc.Commands(bot))
@@ -44,7 +43,7 @@ bot.add_cog(Aliases.Commands(bot))
 bot.add_cog(Pronouns.Commands(bot))
 
 twitter_config = ConfigParser()
-twitter_config.read(config['default']['twitter_tokens'])
+twitter_config.read(config["default"]["twitter_tokens"])
 
 
 @bot.event
@@ -58,8 +57,7 @@ async def on_connect():
         )
         await db.execute(cmd)
         cmd: str = (
-            "CREATE UNIQUE INDEX IF NOT EXISTS"
-            " idx_positions_id ON aliases(id)"
+            "CREATE UNIQUE INDEX IF NOT EXISTS" " idx_positions_id ON aliases(id)"
         )
         await db.execute(cmd)
         cmd: str = (
@@ -85,8 +83,7 @@ async def on_connect():
         )
         await db.execute(cmd)
         cmd: str = (
-            "CREATE UNIQUE INDEX IF NOT EXISTS"
-            " idx_raid_group ON raidroles(role_id)"
+            "CREATE UNIQUE INDEX IF NOT EXISTS" " idx_raid_group ON raidroles(role_id)"
         )
         await db.execute(cmd)
         await db.commit()
@@ -94,20 +91,21 @@ async def on_connect():
 
 @bot.event
 async def on_ready():
-    logging.info(f'Logged in as {bot.user.name} ({bot.user.id})')
-    logging.info('------')
-    activity = discord.Game(name=f'{COMMAND_PREFIX}help for help')
+    logging.info(f"Logged in as {bot.user.name} ({bot.user.id})")
+    logging.info("------")
+    activity = discord.Game(name=f"{COMMAND_PREFIX}help for help")
     await bot.change_presence(status=discord.Status.online, activity=activity)
-    to_follow_str = config['twitter']['twitter_user_id'].split(',')
+    to_follow_str = config["twitter"]["twitter_user_id"].split(",")
     to_follow = [int(item) for item in to_follow_str]
     bot.twitter = granblue_twitter.Twitter(
         bot=bot,
-        consumer=twitter_config['default']['api'],
-        consumer_secret=twitter_config['default']['api_secret'],
-        access=twitter_config['default']['access_token'],
-        access_secret=twitter_config['default']['access_token_secret'],
-        discord_channel_id=config['twitter']['discord_news_feed_channel_id'],
-        twitter_user_id=to_follow)
+        consumer=twitter_config["default"]["api"],
+        consumer_secret=twitter_config["default"]["api_secret"],
+        access=twitter_config["default"]["access_token"],
+        access_secret=twitter_config["default"]["access_token_secret"],
+        discord_channel_id=config["twitter"]["discord_news_feed_channel_id"],
+        twitter_user_id=to_follow,
+    )
     await bot.twitter.follow()
 
 
@@ -116,10 +114,11 @@ async def on_command_error(ctx, *args, **kwargs):
     warning = args[0]
     guild = ctx.guild
     if guild is None:
-        guild = 'direct message'
-    msg = f'{ctx.author} from {guild} caused an error: {warning}'
-    logging.warning(f'message: {msg}')
+        guild = "direct message"
+    msg = f"{ctx.author} from {guild} caused an error: {warning}"
+    logging.warning(f"message: {msg}")
     pass
+
 
 try:
     loop.run_until_complete(bot.login(token=TOKEN))
@@ -127,7 +126,7 @@ try:
     loop.create_task(scheduled.update_events())
     loop.run_until_complete(bot.connect())
 except KeyboardInterrupt:
-    logging.info('Logging out. (You might need to ctrl-C twice.)')
+    logging.info("Logging out. (You might need to ctrl-C twice.)")
     loop.run_until_complete(bot.logout())
 finally:
     loop.run_until_complete(bot.twitter.client.close())

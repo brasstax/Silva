@@ -3,21 +3,20 @@ from discord.ext import commands
 from silva.utilities import misc
 
 
-class Commands(commands.Cog, name='Alias commands'):
+class Commands(commands.Cog, name="Alias commands"):
     def __init__(self, bot):
         self.bot = bot
         self.db_utils = misc.Database(bot.conn)
-        logging.info('Alias commands initialized.')
+        logging.info("Alias commands initialized.")
 
-    @commands.command(name='alias', aliases=['aliases'])
+    @commands.command(name="alias", aliases=["aliases"])
     async def get_alias(self, ctx, word: str):
-        '''
+        """
         Gets the aliases for a given word.
-        '''
+        """
         db = self.db_utils
-        guild = ctx.guild if ctx.guild else 'a direct message'
-        logging.info(
-            f'aliases requested by {ctx.author} in {guild} for {word}.')
+        guild = ctx.guild if ctx.guild else "a direct message"
+        logging.info(f"aliases requested by {ctx.author} in {guild} for {word}.")
         aliases = await db.get_alias(word)
         if not aliases:
             msg = f'No aliases found for "{word}."'
@@ -25,16 +24,15 @@ class Commands(commands.Cog, name='Alias commands'):
             msg = f'Aliases for "{word}": {", ".join(aliases)}'
         await ctx.send(msg)
 
-    @commands.command(name='addalias', aliases=['setalias'], hidden=True)
+    @commands.command(name="addalias", aliases=["setalias"], hidden=True)
     @commands.is_owner()
-    async def set_alias(
-            self, ctx, word: str, alias: str, is_proper: bool = 'True'):
-        '''
+    async def set_alias(self, ctx, word: str, alias: str, is_proper: bool = "True"):
+        """
         Adds an alias to a given word.
         :param word (str): The word to add an alias for.
         :param alias (str): The alias to add to a word.
         :param is_proper (bool): Whether the alias is a proper noun.
-        '''
+        """
         db = self.db_utils
         try:
             if is_proper:
@@ -48,15 +46,14 @@ class Commands(commands.Cog, name='Alias commands'):
             msg = f'Alias "{alias}" already exists for "{word}."'
             await ctx.send(msg)
 
-    @commands.command(name='rmalias', aliases=['delalias'], hidden=True)
+    @commands.command(name="rmalias", aliases=["delalias"], hidden=True)
     @commands.is_owner()
-    async def rm_alias(
-            self, ctx, word: str, alias: str):
-        '''
+    async def rm_alias(self, ctx, word: str, alias: str):
+        """
         Removes an alias from a given word.
         :param word (str): the word to remove the alias from.
         :param alias (str): the alias to remove.
-        '''
+        """
         db = self.db_utils
         aliases = await db.get_alias(word)
         if not aliases:

@@ -9,19 +9,20 @@ import logging
 
 class Twitter(object):
     def __init__(
-            self,
-            bot,
-            consumer: str,
-            consumer_secret: str,
-            access: str,
-            access_secret: str,
-            discord_channel_id: int,
-            twitter_user_id):
+        self,
+        bot,
+        consumer: str,
+        consumer_secret: str,
+        access: str,
+        access_secret: str,
+        discord_channel_id: int,
+        twitter_user_id,
+    ):
         self.client = peony.PeonyClient(
             consumer_key=consumer,
             consumer_secret=consumer_secret,
             access_token=access,
-            access_token_secret=access_secret
+            access_token_secret=access_secret,
         )
         self.bot = bot
         self.channel_id = int(discord_channel_id)
