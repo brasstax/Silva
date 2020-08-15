@@ -2,6 +2,7 @@
 import logging
 from discord.ext import commands
 from discord import Embed, Colour, __version__, File
+from discord import utils as discord_utils
 from silva.utilities import misc, wikimedia_cats
 from datetime import datetime
 import pytz
@@ -172,7 +173,7 @@ class Commands(commands.Cog, name="Misc. commands"):
         logging.info(f"stick requested by {ctx.author} in {guild}.")
         name = " ".join(name)
         if not name:
-            msg = f"_headpats {ctx.author.display_name}_"
+            msg = f"_headpats {discord_utils.escape_markdown(ctx.author.display_name)}_"
             return await ctx.send(msg)
         try:
             users = self.text_utils.user_searcher(self.bot, name)
@@ -183,8 +184,10 @@ class Commands(commands.Cog, name="Misc. commands"):
         if not users:
             msg = f"{ctx.author.display_name}, I couldn't find any users with the name '{name}'."
             msg += (
-                f" You can have a headpet anyway. _headpats {ctx.author.display_name}_"
+                f" You can have a headpat anyway. _headpats {discord_utils.escape_markdown(ctx.author.display_name)}_"
             )
             return await ctx.send(msg)
-        msg = f"_headpats {', '.join([x.display_name for x in users])} and {ctx.author.display_name}_"
+        msg = (
+            f"_headpats {', '.join([discord_utils.escape_markdown(x.display_name) for x in users])}"
+            f" and {discord_utils.escape_markdown(ctx.author.display_name)}_")
         return await ctx.send(msg)
