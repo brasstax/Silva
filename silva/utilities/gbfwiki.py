@@ -23,7 +23,7 @@ class Wiki:
         self.base_url = "https://gbf.wiki"
         self.url = f"{self.base_url}/api.php"
         self.headers = {
-            "User-Agent": "Granblue SA Silva Bot (Written by Hail Hydrate#9035)",
+            "User-Agent": "Granblue SA Silva Bot (Written by Seymour#9035)",
             "Accept": "application/json",
         }
 
