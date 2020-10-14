@@ -4,7 +4,7 @@ from discord.ext import commands
 from discord import Embed, Colour, __version__, File
 from discord import utils as discord_utils
 from silva.utilities import misc, wikimedia_cats
-from datetime import datetime
+from datetime import datetime, date
 import pytz
 import re
 from bs4 import BeautifulSoup
@@ -190,4 +190,16 @@ class Commands(commands.Cog, name="Misc. commands"):
         msg = (
             f"_headpats {', '.join([discord_utils.escape_markdown(x.display_name) for x in users])}"
             f" and {discord_utils.escape_markdown(ctx.author.display_name)}_")
+        return await ctx.send(msg)
+
+    @commands.command(name="covidstandardtime", aliases=["cvst", "covidtime"])
+    async def covid_standard_time(self, ctx):
+        """
+        Returns the days, in UTC, since March 1, 2020.
+        """
+        guild = ctx.guild if ctx.guild else "a direct message"
+        logging.info(f"cvst requested by {ctx.author} in {guild}.")
+        days = self.text_utils.days_since(date(2020, 3, 1))
+        now = datetime.now(pytz.utc)
+        msg = f"Today is {now.strftime('%A')}, March {days}{self.text_utils.inflect_day(days)} UTC, 2020."
         return await ctx.send(msg)

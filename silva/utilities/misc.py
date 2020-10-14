@@ -8,6 +8,8 @@ import aiohttp
 import io
 import cairosvg
 from PIL import Image, ImageEnhance
+from datetime import datetime, date
+import pytz
 
 
 class Database:
@@ -346,6 +348,23 @@ class TextUtils:
         if len(users) > max_users:
             raise ValueError("Too many users returned.")
         return users
+
+    def days_since(self, date: datetime.date) -> int:
+        """
+        Returns the days since the given date in utc.
+        """
+        days = datetime.now(pytz.utc).date() - date
+        return days.days
+
+    def inflect_day(self, day: int) -> str:
+        """
+        https://stackoverflow.com/a/52045942
+        """
+        date_suffix = ["th", "st", "nd", "rd"]
+        if day % 10 in [1, 2, 3] and day not in [11, 12, 13]:
+            return date_suffix[day % 10]
+        else:
+            return date_suffix[0]
 
     class InvalidDrawsError(ValueError):
         pass
