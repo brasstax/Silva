@@ -15,6 +15,9 @@ parser.add_argument("--config", "-c", type=str, default="config.ini")
 args = parser.parse_args()
 config_file = args.config
 
+intents = discord.Intents.default()
+intents.members = True
+
 log_format = "[%(filename)s:%(lineno)s:%(funcName)s() ]%(asctime)s - %(levelname)s - %(message)s"  # noqa
 logging.basicConfig(level=logging.INFO, format=log_format)
 
@@ -29,6 +32,7 @@ bot = commands.Bot(
     command_prefix=commands.when_mentioned_or(COMMAND_PREFIX),
     description="The best sniper. She'll drink you under the table.",
     case_insensitive=True,
+    intents=intents
 )
 bot.conn = "aliases.sqlite3"
 bot.events_channel = config["twitter"]["discord_news_feed_channel_id"]
