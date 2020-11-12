@@ -164,7 +164,7 @@ class Commands(commands.Cog, name="Misc. commands"):
                         content="BETA: Couldn't get a cat picture from Wikipedia."
                     )  # noqa
 
-    @commands.command(name="headpat", aliases=["stick"])
+    # @commands.command(name="headpat", aliases=["stick"])
     async def headpat(self, ctx, *name: str):
         """
         Stick *really* wanted this command.
