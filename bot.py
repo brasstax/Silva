@@ -52,6 +52,7 @@ twitter_config.read(config["default"]["twitter_tokens"])
 
 @bot.event
 async def on_connect():
+    bot.COMMAND_PREFIX = COMMAND_PREFIX
     async with aiosqlite.connect(bot.conn) as db:
         db.row_factory = aiosqlite.Row
         cmd: str = (
