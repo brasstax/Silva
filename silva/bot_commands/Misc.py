@@ -8,6 +8,7 @@ from datetime import datetime, date
 import pytz
 import re
 from bs4 import BeautifulSoup
+import random
 
 
 class Commands(commands.Cog, name="Misc. commands"):
@@ -191,6 +192,26 @@ class Commands(commands.Cog, name="Misc. commands"):
             f"_headpats {', '.join([discord_utils.escape_markdown(x.display_name) for x in users])}"
             f" and {discord_utils.escape_markdown(ctx.author.display_name)}_")
         return await ctx.send(msg)
+
+    @commands.command(name="choose")
+    async def choose(self, ctx, *, choices: str = None):
+        """
+        Chooses from a set of choices, separated by commas. Maximum of 20 choices supported.
+        """
+        guild = ctx.guild if ctx.guild else "a direct message"
+        if choices:
+            logging.info(f"choose requested by {ctx.author} in {guild} with args '{choices}'.")
+        else:
+            logging.info(f"choose requested by {ctx.author} in {guild} with no args.")
+            msg = f"To use: `{self.bot.COMMAND_PREFIX}choose item1, item2, item3`"
+            return await ctx.send(msg)
+        items_list = [item.strip() for item in choices.split(",")]
+        if len(items_list) > 20:
+            msg = f"{ctx.author.display_name}, I don't feel like choosing between more than 20 items."
+            return await ctx.send(msg)
+        items = set(items_list)
+        item = random.choice(tuple(items))
+        return await ctx.send(item)
 
     @commands.command(name="covidstandardtime", aliases=["cvst", "covidtime"])
     async def covid_standard_time(self, ctx):
