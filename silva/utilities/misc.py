@@ -9,6 +9,7 @@ import io
 import cairosvg
 from PIL import Image, ImageEnhance
 from datetime import datetime, date
+import operator
 import pytz
 
 
@@ -446,5 +447,93 @@ class EmojiUtils:
         output.seek(0)
         return output
 
-    class NoEmojiFound(Exception):
-        pass
+
+class Dicebag:
+    def __init__(self, roll: str):
+        pattern = r"\d+d\d+([\+\-x\*/]\d+)?"
+        roll = roll.split()
+        roll = "".join(roll)
+        roll = roll.strip()
+        if not re.match(pattern, roll):
+            raise InvalidDiceString(f"{roll} is not a valid set of dice.")
+        if re.search(r"[\+\-x\*/]", roll):
+            mod_pattern = r"\d+[\+\-x\*/]\d+"
+            if not re.match(mod_pattern, roll.split("d")[-1]):
+                raise InvalidDiceString(f"{roll} is not a valid set of dice.")
+        self.roll = roll
+        self.roll_dict = self.parse_dice_string(roll)
+
+    def __repr__(self):
+        return f"Dicebag('{self.roll}')"
+
+    def __str__(self):
+        dice_count = self.roll_dict["dice_count"]
+        dice_type = self.roll_dict["dice_type"]
+        mod_type = self.roll_dict["mod_type"]
+        mod_value = self.roll_dict["mod_value"]
+        return f"A dicebag with {dice_count}d{dice_type} and a modifier of {mod_type}{mod_value}."
+
+    def parse_dice_string(self, roll: str) -> Dict[str, any]:
+        """
+        Parses a dice roll string and returns a dict of the following:
+        dice_count (int)
+        dice_type (int)
+        mod_value (int)
+        mod_type (str)
+        """
+        if not re.search(r"[\+\-x\*/]", roll):
+            dice_count = roll.split("d")[0]
+            dice_type = roll.split("d")[-1]
+            mod_value = 0
+            mod_type = "+"
+        else:
+            dice_count = roll.split("d")[0]
+            mod_type = re.search(r"[\+\-\*x/]", roll)[0]
+            dice_type = roll.split("d")[-1].split(mod_type)[0]
+            mod_value = roll.split("d")[-1].split(mod_type)[-1]
+        try:
+            int(dice_count)
+            int(dice_type)
+            int(mod_value)
+        except ValueError:
+            raise InvalidDiceString(f"{roll} is not a valid set of dice.")
+        return {
+            "dice_count": int(dice_count),
+            "dice_type": int(dice_type),
+            "mod_type": mod_type,
+            "mod_value": int(mod_value)
+        }
+
+    def dice_modifier(self, mod_type: str) -> operator:
+        """
+        Returns an operator function based on the mod_type operator string.
+        """
+        operators = {
+            "+": operator.add,
+            "-": operator.sub,
+            "x": operator.mul,
+            "*": operator.mul,
+            "/": operator.floordiv
+        }
+        return operators[mod_type]
+
+    def roll_dice(self) -> int:
+        """
+        Uses the results from parse_dice_string to roll a set of dice
+        and add modifiers.
+        """
+        roll = self.roll_dict
+        dice_total = 0
+        for i in range(roll["dice_count"]):
+            dice_total += random.randint(1, roll["dice_type"])
+        mod_operation = self.dice_modifier(roll["mod_type"])
+        total = mod_operation(dice_total, roll["mod_value"])
+        return total
+
+
+class NoEmojiFound(Exception):
+    pass
+
+
+class InvalidDiceString(Exception):
+    pass

@@ -224,3 +224,28 @@ class Commands(commands.Cog, name="Misc. commands"):
         now = datetime.now(pytz.utc)
         msg = f"Today is {now.strftime('%A')}, March {days}{self.text_utils.inflect_day(days)} UTC, 2020."
         return await ctx.send(msg)
+
+    @commands.command(name="roll", aliases=["dicebag", "dice"])
+    async def dicebag(self, ctx, *, roll: str="1d6"):
+        """
+        A purple felt dicebag with clicky-clacky plastic dice. Smells like plastic.
+        :param: roll (str): a string representation of the amount of dice to roll, the type of dice,
+        and any modifiers.
+        Modifiers can be one of the following:
+        - +
+        - -
+        - x or *
+        - / (will round down)
+        Examples:
+        * roll 1d6
+        * roll 2d20+1
+        * roll 6d100x2
+        * roll 5d20/4
+        """
+        guild = ctx.guild if ctx.guild else "a direct message"
+        logging.info(f"roll requested by {ctx.author} in {guild} with args '{roll}'.")
+        try:
+            dice = misc.Dicebag(roll)
+        except misc.InvalidDiceString as e:
+            return await ctx.send(e)
+        return await ctx.send(dice.roll_dice())
