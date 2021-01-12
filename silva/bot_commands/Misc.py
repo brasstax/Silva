@@ -248,4 +248,15 @@ class Commands(commands.Cog, name="Misc. commands"):
             dice = misc.Dicebag(roll)
         except (misc.InvalidDiceString, misc.TooManyDiceError) as e:
             return await ctx.send(e)
-        return await ctx.send(await dice.roll_dice())
+        result = await dice.roll_dice()
+        dice_count = dice.roll_dict['dice_count']
+        dice_type = dice.roll_dict['dice_type']
+        mod_type = dice.roll_dict['mod_type']
+        mod_value = dice.roll_dict['mod_value']
+        msg = (
+            f"Rolled {dice_count} {dice_type}-sided"
+            f" {'die' if dice_count == 1 else 'dice'}"
+            f"{f', {mod_type}{mod_value} modifier.' if mod_value != 0 else '.'}"
+            f" **{result}{'! CRITICAL HIT!!**' if result == 20 and mod_value == 0 else '.**'}"
+        )
+        return await ctx.send(msg)
