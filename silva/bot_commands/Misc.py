@@ -246,6 +246,6 @@ class Commands(commands.Cog, name="Misc. commands"):
         logging.info(f"roll requested by {ctx.author} in {guild} with args '{roll}'.")
         try:
             dice = misc.Dicebag(roll)
-        except misc.InvalidDiceString as e:
+        except (misc.InvalidDiceString, misc.TooManyDiceError) as e:
             return await ctx.send(e)
-        return await ctx.send(dice.roll_dice())
+        return await ctx.send(await dice.roll_dice())

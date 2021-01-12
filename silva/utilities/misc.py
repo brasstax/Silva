@@ -10,6 +10,7 @@ import cairosvg
 from PIL import Image, ImageEnhance
 from datetime import datetime, date
 import operator
+import asyncio
 import pytz
 
 
@@ -462,6 +463,8 @@ class Dicebag:
                 raise InvalidDiceString(f"{roll} is not a valid set of dice.")
         self.roll = roll
         self.roll_dict = self.parse_dice_string(roll)
+        if self.roll_dict["dice_count"] > 10000:
+            raise TooManyDiceError(f"I'm not rolling more than 10,000 dice.")
 
     def __repr__(self):
         return f"Dicebag('{self.roll}')"
@@ -517,15 +520,16 @@ class Dicebag:
         }
         return operators[mod_type]
 
-    def roll_dice(self) -> int:
+    async def roll_dice(self) -> int:
         """
         Uses the results from parse_dice_string to roll a set of dice
         and add modifiers.
         """
         roll = self.roll_dict
         dice_total = 0
+        loop = asyncio.get_event_loop()
         for i in range(roll["dice_count"]):
-            dice_total += random.randint(1, roll["dice_type"])
+            dice_total += await loop.run_in_executor(None, random.randint, 1, roll["dice_type"])
         mod_operation = self.dice_modifier(roll["mod_type"])
         total = mod_operation(dice_total, roll["mod_value"])
         return total
@@ -535,5 +539,9 @@ class NoEmojiFound(Exception):
     pass
 
 
-class InvalidDiceString(Exception):
+class InvalidDiceString(ValueError):
+    pass
+
+
+class TooManyDiceError(ValueError):
     pass
