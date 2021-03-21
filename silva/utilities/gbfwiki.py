@@ -88,18 +88,27 @@ class Wiki:
             event: dict = {}
             event["title"] = span["title"]["name"]
             event["start"] = span["title"]["time start"]
-            if span["title"]["time end"] != "":
-                event["finish"] = span["title"]["time end"]
-            else:
+            try:
+                if span["title"]["time end"] != "":
+                    event["finish"] = span["title"]["time end"]
+                else:
+                    event["finish"] = "¯\_(ツ)_/¯"  # noqa
+            except KeyError:
                 event["finish"] = "¯\_(ツ)_/¯"  # noqa
             event["utc start"] = int(span["title"]["utc start"])
             event["utc end"] = int(span["title"]["utc end"])
-            if span["title"]["element"] != "":
-                event["title"] += f" ({span['title']['element']})"
-            if span["title"]["wiki page"] != "":
-                url = f"{self.base_url}/{span['title']['wiki page']}".replace(" ", "_")
-                event["url"] = url
-            else:
+            try:
+                if span["title"]["element"] != "":
+                    event["title"] += f" ({span['title']['element']})"
+            except KeyError:
+                pass
+            try:
+                if span["title"]["wiki page"] != "":
+                    url = f"{self.base_url}/{span['title']['wiki page']}".replace(" ", "_")
+                    event["url"] = url
+                else:
+                    event["url"] = "No wiki page"
+            except KeyError:
                 event["url"] = "No wiki page"
             if datetime.fromtimestamp(int(span["title"]["utc start"]), pytz.utc) <= now:
                 events["current"].append(event)
