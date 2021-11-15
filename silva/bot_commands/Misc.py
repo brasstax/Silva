@@ -91,32 +91,33 @@ class Commands(commands.Cog, name="Misc. commands"):
         emoji = emoji.replace("\\", "")
         # For standard emoji, check to see if we can grab the image
         # from MaxCDN.
-        if len(emoji) == 1:
-            emoji_id = hex(ord(emoji))[2:]
-            emoji_name_ext = f"{emoji_id}.png"
+        async with ctx.channel.typing():
+            if len(emoji) == 1:
+                emoji_id = hex(ord(emoji))[2:]
+                emoji_name_ext = f"{emoji_id}.png"
+                try:
+                    data, img_type = await utils.get_emoji("maxcdn", emoji_id)
+                    data.seek(0)
+                    return await ctx.send(file=File(data, f"{emoji_name_ext}"))
+                except utils.NoEmojiFound:
+                    return await ctx.send("No emoji found.")
+                except Exception as e:
+                    logging.warning(e)
+                    return await ctx.send("Couldn't embiggen at this time.")
+            # Static emojis are uploaded as png, and animated emojis are
+            # uploaded as a gif. Try to get the gif first; if 415,
+            # get the PNG.
+            # Get only the ID (in case the emoji name has a number)
+            emoji_id = re.findall(r"\d+", emoji)[-1]
+            # Get the name of the emoji (avoids the 'a:' prefix)
+            # for animated emoji
+            emoji_name = re.findall(r":\w+", emoji)[0][1:]
             try:
-                data, img_type = await utils.get_emoji("maxcdn", emoji_id)
-                data.seek(0)
-                return await ctx.send(file=File(data, f"{emoji_name_ext}"))
-            except utils.NoEmojiFound:
-                return await ctx.send("No emoji found.")
+                data, img_type = await utils.get_emoji("discord", emoji_id)
+                return await ctx.send(file=File(data, f"{emoji_name}.{img_type}"))
             except Exception as e:
                 logging.warning(e)
                 return await ctx.send("Couldn't embiggen at this time.")
-        # Static emojis are uploaded as png, and animated emojis are
-        # uploaded as a gif. Try to get the gif first; if 415,
-        # get the PNG.
-        # Get only the ID (in case the emoji name has a number)
-        emoji_id = re.findall(r"\d+", emoji)[-1]
-        # Get the name of the emoji (avoids the 'a:' prefix)
-        # for animated emoji
-        emoji_name = re.findall(r":\w+", emoji)[0][1:]
-        try:
-            data, img_type = await utils.get_emoji("discord", emoji_id)
-            return await ctx.send(file=File(data, f"{emoji_name}.{img_type}"))
-        except Exception as e:
-            logging.warning(e)
-            return await ctx.send("Couldn't embiggen at this time.")
 
     @commands.command(name="cat", aliases=["catte", "likeblue"])
     async def wikicat(self, ctx):
