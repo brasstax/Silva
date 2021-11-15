@@ -7,12 +7,17 @@ import random
 import aiohttp
 import io
 import cairosvg
-from PIL import Image, ImageEnhance
 from datetime import datetime, date
 import operator
 import asyncio
 import pytz
+import cv2
+from cv2 import dnn_superres
+import numpy
+from PIL import Image
 
+# EDSR from: https://github.com/Saafke/EDSR_Tensorflow/blob/master/models/EDSR_x4.pb
+MODEL = "./EDSR_x4.pb"
 
 class Database:
     def __init__(self, conn: str):
@@ -412,7 +417,7 @@ class EmojiUtils:
                     resp = await session.get(f"{emoji_url}/{emoji_id}.svg", timeout=10)
                     img_type = "png"
                     if resp.status != 200:
-                        raise self.NoEmojiFound("No emoji found.")
+                        raise NoEmojiFound("No emoji found.")
                     data = await resp.read()
                     input = io.BytesIO(data)
                     output = io.BytesIO()
@@ -424,8 +429,8 @@ class EmojiUtils:
                         write_to=output,
                     )
                 return (output, img_type)
-        except self.NoEmojiFound as e:
-            raise self.NoEmojiFound(e)
+        except NoEmojiFound as e:
+            raise NoEmojiFound(e)
         except Exception as e:
             raise Exception(e)
 
@@ -434,17 +439,35 @@ class EmojiUtils:
         Sharpens an incoming image. Returns an io.BytesIO representation
         of the enhanced image.
         """
+        base_width = 128
         data.seek(0)
-        basewidth = 128
-        image = Image.open(data)
-        image = image.convert("RGBA")
-        wpercent = basewidth / float(image.width)
-        height = int(float(image.height) * float(wpercent))
-        embiggened = image.resize((basewidth, height))
-        enhancer = ImageEnhance.Sharpness(embiggened)
-        enhanced = enhancer.enhance(2.0)
-        output = io.BytesIO()
-        enhanced.save(output, format=img_type)
+        sr = dnn_superres.DnnSuperResImpl_create()
+        sr.readModel(MODEL)
+        # Set desired model/scale
+        sr.setModel("edsr", 4)
+        # no model supports transparent pngs so far so we convert to RGB and discard alpha
+        image = cv2.imdecode(numpy.frombuffer(data.read(), numpy.uint8), cv2.IMREAD_COLOR)
+        data.seek(0)
+        # open original image with alpha; we'll resize this image and grab just the alpha layer later
+        image_with_alpha = cv2.imdecode(numpy.frombuffer(data.read(), numpy.uint8), cv2.IMREAD_UNCHANGED)
+        enhanced = sr.upsample(image)
+        # new resolution
+        height, width, _ = enhanced.shape
+        image_with_alpha = cv2.resize(image_with_alpha, (width, height), cv2.INTER_NEAREST)
+        b_channel, g_channel, r_channel = cv2.split(enhanced)
+        # alpha channels
+        alpha_channel = cv2.split(image_with_alpha)[-1]
+        # merge upsampled picture with alpha channel from resized image
+        img_BGRA = cv2.merge((b_channel, g_channel, r_channel, alpha_channel))
+        sharp_kernel = numpy.array([[0, -1, 0],
+                                    [-1, 5,-1],
+                   [                0, -1, 0]])
+        wpercent = base_width / float(width)
+        new_height = int(float(height) * float(wpercent))
+        img_BGRA = cv2.resize(img_BGRA, (base_width, new_height), cv2.INTER_NEAREST)
+        img_BGRA = cv2.filter2D(src=img_BGRA, ddepth=-1, kernel=sharp_kernel)
+        _, buffer = cv2.imencode(".png", img_BGRA)
+        output = io.BytesIO(buffer)
         output.seek(0)
         return output
 
