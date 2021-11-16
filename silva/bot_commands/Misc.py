@@ -119,8 +119,8 @@ class Commands(commands.Cog, name="Misc. commands"):
                 logging.warning(e)
                 return await ctx.send("Couldn't embiggen at this time.")
 
-    @commands.command(name="biglify")
-    async def biglify(self, ctx, emoji: str):
+    @commands.command(name="biglify2")
+    async def biglify2(self, ctx, emoji: str):
         """
         Takes a Discord emoji and makes it bigger using a GPT-trained model.
         Doesn't work for GIFs.
@@ -156,7 +156,53 @@ class Commands(commands.Cog, name="Misc. commands"):
             # for animated emoji
             emoji_name = re.findall(r":\w+", emoji)[0][1:]
             try:
-                data, img_type = await utils.get_emoji("discord", emoji_id, gpt=True)
+                data, img_type = await utils.get_emoji(
+                    "discord", emoji_id, gpt=True, gpt_use_close=True)
+                return await ctx.send(file=File(data, f"{emoji_name}.{img_type}"))
+            except Exception as e:
+                logging.warning(e)
+                return await ctx.send("Couldn't biglify at this time.")
+
+    @commands.command(name="biglify")
+    async def biglify(self, ctx, emoji: str):
+        """
+        Takes a Discord emoji and makes it bigger using a GPT-trained model.
+        Doesn't work for GIFs. Uses a different mechanism for edge detection
+        in case the normal biglify doesn't work out.
+        """
+        logging.info(f"{ctx.author} requested biglify2 for {emoji}.")
+        emoji_regex = r"(^\\?<a?:\w+:\d+>$)|(^\\?.$)"
+        if not re.match(emoji_regex, emoji):
+            return await ctx.send("No emoji found.")
+        utils = misc.EmojiUtils()
+        # strip out any backslashes in our emoji string.
+        emoji = emoji.replace("\\", "")
+        # For standard emoji, check to see if we can grab the image
+        # from MaxCDN.
+        async with ctx.channel.typing():
+            if len(emoji) == 1:
+                emoji_id = hex(ord(emoji))[2:]
+                emoji_name_ext = f"{emoji_id}.png"
+                try:
+                    data, img_type = await utils.get_emoji("maxcdn", emoji_id)
+                    data.seek(0)
+                    return await ctx.send(file=File(data, f"{emoji_name_ext}"))
+                except utils.NoEmojiFound:
+                    return await ctx.send("No emoji found.")
+                except Exception as e:
+                    logging.warning(e)
+                    return await ctx.send("Couldn't embiggen at this time.")
+            # Static emojis are uploaded as png, and animated emojis are
+            # uploaded as a gif. Try to get the gif first; if 415,
+            # get the PNG.
+            # Get only the ID (in case the emoji name has a number)
+            emoji_id = re.findall(r"\d+", emoji)[-1]
+            # Get the name of the emoji (avoids the 'a:' prefix)
+            # for animated emoji
+            emoji_name = re.findall(r":\w+", emoji)[0][1:]
+            try:
+                data, img_type = await utils.get_emoji(
+                    "discord", emoji_id, gpt=True, gpt_use_close=False)
                 return await ctx.send(file=File(data, f"{emoji_name}.{img_type}"))
             except Exception as e:
                 logging.warning(e)

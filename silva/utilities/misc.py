@@ -378,7 +378,7 @@ class TextUtils:
 
 
 class EmojiUtils:
-    async def get_emoji(self, cdn: str, emoji_id: str, gpt: bool=False, width_limit: bool=True):
+    async def get_emoji(self, cdn: str, emoji_id: str, gpt: bool=False, width_limit: bool=True, gpt_use_close: bool=True):
         """
         Downloads the requested emoji from a given CDN.
         :param cdn (str): the CDN to use. For standard emoji, 'maxcdn'.
@@ -390,6 +390,9 @@ class EmojiUtils:
             False.
         :param width_limit (bool): Whether or not to apply the width limit of 128.
             Defaults to True.
+        :param gpt_use_close (bool): Whether or not to use contour-closing via
+            gpt_enhance_image. Defaults to True. If this produces a really weird image,
+            set to False to use gpt_enchance_image_simple instead.
         :return tuple of io.BytesIO of the emoji picture and the image type.
         """
         if cdn == "maxcdn":
@@ -414,7 +417,10 @@ class EmojiUtils:
                     image = Image.open(output)
                     if image.width < 100 and img_type == "png":
                         if gpt:
-                            output = await self.gpt_enhance_image(output, img_type)
+                                if gpt_use_close:
+                                    output = await self.gpt_enhance_image(output, img_type)
+                                else:
+                                    output = await self.gpt_enhance_image_simple(output, img_type)
                         else:
                             output = await self.enhance_image(output, img_type)
                     else:
@@ -464,6 +470,66 @@ class EmojiUtils:
         """
         Sharpens an incoming image using a GPT model. Returns an io.BytesIO representation
         of the enhanced image.
+        """
+        base_width = 128
+        data.seek(0)
+        sr = dnn_superres.DnnSuperResImpl_create()
+        sr.readModel(MODEL)
+        # Set desired model/scale
+        sr.setModel("edsr", 4)
+        # no model supports transparent pngs so far so we convert to RGB and discard alpha
+        image = cv2.imdecode(numpy.frombuffer(data.read(), numpy.uint8), cv2.IMREAD_COLOR)
+        data.seek(0)
+        # open original image with alpha; we'll resize this image and grab just the alpha layer later
+        image_with_alpha = cv2.imdecode(numpy.frombuffer(data.read(), numpy.uint8), cv2.IMREAD_GRAYSCALE)
+        enhanced = sr.upsample(image)
+        # new resolution
+        height, width, _ = enhanced.shape
+        # alpha channels
+        alpha_channel = cv2.split(image_with_alpha)[-1]
+        gray_layer = cv2.merge((alpha_channel, alpha_channel, alpha_channel))
+        gray_layer = sr.upsample(gray_layer)
+        gray_layer = cv2.cvtColor(gray_layer, cv2.COLOR_BGR2GRAY)
+        blur = cv2.GaussianBlur(gray_layer, (3, 3), cv2.BORDER_DEFAULT)
+        _, mask = cv2.threshold(blur, 220, 255, cv2.THRESH_OTSU + cv2.THRESH_BINARY_INV)
+        mask = cv2.ximgproc.thinning(mask)
+        # Close contour
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
+        close = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=1)
+        # Find outer contour and fill with white
+        cnts = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+        cv2.fillPoly(close, cnts, [255,255,255])
+        
+        # _, buffer = cv2.imencode(".png", close)
+        # edges = cv2.Canny(gray_layer, 20, 30)
+        #_, buffer = cv2.imencode(".png", edges)
+        #output = io.BytesIO(buffer)
+        #output.seek(0)
+        #return output
+
+        b_channel, g_channel, r_channel = cv2.split(enhanced)
+        # merge upsampled picture with alpha channel from resized image
+        img_BGRA = cv2.merge((b_channel, g_channel, r_channel, close))
+        sharp_kernel = numpy.array([[0, -1, 0],
+                                    [-1, 5,-1],
+                   [                0, -1, 0]])
+        wpercent = base_width / float(width)
+        new_height = int(float(height) * float(wpercent))
+        img_BGRA = cv2.resize(img_BGRA, (base_width, new_height), cv2.INTER_NEAREST)
+        img_BGRA = cv2.filter2D(src=img_BGRA, ddepth=-1, kernel=sharp_kernel)
+        _, buffer = cv2.imencode(".png", img_BGRA)
+        output = io.BytesIO(buffer)
+        output.seek(0)
+        return output
+
+    async def gpt_enhance_image_simple(self, data: io.BytesIO, img_type: str) -> io.BytesIO:
+        """
+        Sharpens an incoming image using a GPT model. Returns an io.BytesIO representation
+        of the enhanced image.
+
+        A simpler version of gpt_enhance_image for more complex pictures that don't need
+        contour-filling.
         """
         base_width = 128
         data.seek(0)
