@@ -378,7 +378,7 @@ class TextUtils:
 
 
 class EmojiUtils:
-    async def get_emoji(self, cdn: str, emoji_id: str):
+    async def get_emoji(self, cdn: str, emoji_id: str, gpt: bool=False, width_limit: bool=True):
         """
         Downloads the requested emoji from a given CDN.
         :param cdn (str): the CDN to use. For standard emoji, 'maxcdn'.
@@ -386,6 +386,10 @@ class EmojiUtils:
         :param emoji_id (int): the ID of the emoji. For standard emoji,
             the hex value (without the leading 0x.) For Discord's custom
             emoji, the numerical ID of the emoji.
+        :param gpt (bool): Whether or not to enhance using GPT. Defaults to
+            False.
+        :param width_limit (bool): Whether or not to apply the width limit of 128.
+            Defaults to True.
         :return tuple of io.BytesIO of the emoji picture and the image type.
         """
         if cdn == "maxcdn":
@@ -409,7 +413,10 @@ class EmojiUtils:
                     # images, but ¯\_(ツ)_/¯
                     image = Image.open(output)
                     if image.width < 100 and img_type == "png":
-                        output = await self.enhance_image(output, img_type)
+                        if gpt:
+                            output = await self.gpt_enhance_image(output, img_type)
+                        else:
+                            output = self.enhance_image(output, img_type)
                     else:
                         output.seek(0)
                     return (output, img_type)
@@ -436,7 +443,26 @@ class EmojiUtils:
 
     async def enhance_image(self, data: io.BytesIO, img_type: str) -> io.BytesIO:
         """
-        Sharpens an incoming image. Returns an io.BytesIO representation
+        Sharpens an incoming image using standard PIL sharpen. Returns an io.BytesIO representation
+        of the enhanced image.
+        """
+        data.seek(0)
+        basewidth = 128
+        image = Image.open(data)
+        image = image.convert("RGBA")
+        wpercent = basewidth / float(image.width)
+        height = int(float(image.height) * float(wpercent))
+        embiggened = image.resize((basewidth, height))
+        enhancer = ImageEnhance.Sharpness(embiggened)
+        enhanced = enhancer.enhance(2.0)
+        output = io.BytesIO()
+        enhanced.save(output, format=img_type)
+        output.seek(0)
+        return output
+
+    async def gpt_enhance_image(self, data: io.BytesIO, img_type: str) -> io.BytesIO:
+        """
+        Sharpens an incoming image using a GPT model. Returns an io.BytesIO representation
         of the enhanced image.
         """
         base_width = 128
