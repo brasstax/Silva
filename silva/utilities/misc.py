@@ -416,7 +416,7 @@ class EmojiUtils:
                         if gpt:
                             output = await self.gpt_enhance_image(output, img_type)
                         else:
-                            output = self.enhance_image(output, img_type)
+                            output = await self.enhance_image(output, img_type)
                     else:
                         output.seek(0)
                     return (output, img_type)
