@@ -14,7 +14,7 @@ import pytz
 import cv2
 from cv2 import dnn_superres
 import numpy
-from PIL import Image
+from PIL import Image, ImageEnhance
 
 # EDSR from: https://github.com/Saafke/EDSR_Tensorflow/blob/master/models/EDSR_x4.pb
 MODEL = "./EDSR_x4.pb"
