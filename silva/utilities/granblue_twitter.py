@@ -44,6 +44,6 @@ class Twitter(object):
                         user_id = tweet.user.id
                         if user_id in self.follow_id:
                             logging.info(f"@{username}: {tweet.text}")
-                            url = f"https://twitter.com/{username}/status/{sid}"
+                            url = f"https://fxtwitter.com/{username}/status/{sid}"
                             logging.info(url)
                             await channel.send(url)
