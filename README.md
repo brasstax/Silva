@@ -23,3 +23,6 @@ api_secret=
 
 # Usage
 `./runbot.sh config.ini`
+
+# Logging
+All command invocations log to stdout. Any tweets that come in also get logged into stdout as well.
