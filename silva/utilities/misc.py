@@ -209,6 +209,7 @@ class TextUtils:
         """
         db = Database(conn)
         aliases = await db.get_aliases()
+        new_text = text
         for word, alias in aliases.items():
             regex = re.compile(r"\b{}s?\b".format(word), flags=re.IGNORECASE)
             choice = random.choice(alias)
