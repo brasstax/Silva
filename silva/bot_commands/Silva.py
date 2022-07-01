@@ -135,10 +135,11 @@ class Commands(commands.Cog, name="GBF-related commands"):
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(
-                    "http://www.pycatfacts.com/catfacts.txt?sfw=true", timeout=10
+                    "https://api.pycatfacts.com/", timeout=10
                 ) as fact:
                     status = fact.status
-                    text = await fact.text()
+                    text = await fact.json()
+                    text = text["fact"]
             if status >= 400:
                 new_text = random.choice(
                     [
