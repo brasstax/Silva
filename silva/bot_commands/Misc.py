@@ -366,7 +366,11 @@ class Commands(commands.Cog, name="Misc. commands"):
         try:
             avatar = self.text_utils.get_avatar(self.bot, name)
         except IndexError:
-             msg = f"{ctx.author.display_name}, I couldn't find any users with the name '{name}'."
-             return await ctx.send(msg)
+            msg = f"{ctx.author.display_name}, I couldn't find any users with the name '{name}'."
+            return await ctx.send(msg)
+        except ValueError:
+            msg = f"{ctx.author.display_name}, '{name}' returns too many people."
+            msg += f" Try adding the number ID to the end of the name (like `{ctx.author.name}#{ctx.author.discriminator}`)."
+            return await ctx.send(msg)
         logging.info(avatar)
         return await ctx.send(avatar)
