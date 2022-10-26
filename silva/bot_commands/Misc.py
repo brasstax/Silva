@@ -350,3 +350,22 @@ class Commands(commands.Cog, name="Misc. commands"):
             f" **{result}{'! CRITICAL HIT!!**' if result == 20 and mod_value == 0 else '.**'}"
         )
         return await ctx.send(msg)
+
+    @commands.command(name="av", aliases=["avatar"])
+    async def get_avatar(self, ctx, name: str):
+        """
+        Returns the avatar of a user. Can either specify username without the discriminator
+        (less accurate) or username with discriminator (ie Seymour#9035).
+        """
+        guild = ctx.guild if ctx.guild else "a direct message"
+        if name:
+            logging.info(f"av requested by {ctx.author} in {guild} with args '{name}'.")
+        else:
+            logging.info(f"av requested by {ctx.author} in {guild} with no args.")
+        try:
+            avatar = self.text_utils.get_avatar(self.bot, name)
+        except IndexError:
+             msg = f"{ctx.author.display_name}, I couldn't find any users with the name '{name}'."
+             return await ctx.send(msg)
+        logging.info(avatar)
+        return await ctx.send(avatar)

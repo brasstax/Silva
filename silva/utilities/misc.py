@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # misc.py
+from ast import Index
 import aiosqlite
 from typing import Dict, List
 import re
@@ -373,6 +374,16 @@ class TextUtils:
             return date_suffix[day % 10]
         else:
             return date_suffix[0]
+    
+    def get_avatar(self, bot, name: str, max_users=1) -> str:
+        """
+        Gets an avatar of a user. Takes either their username,
+        username and discriminator, or a nickname
+        (although more exact is better.)
+        """
+        user = self.user_searcher(bot, name, max_users)[0]
+        return user.avatar_url
+
 
     class InvalidDrawsError(ValueError):
         pass
