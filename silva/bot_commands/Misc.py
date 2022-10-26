@@ -352,7 +352,7 @@ class Commands(commands.Cog, name="Misc. commands"):
         return await ctx.send(msg)
 
     @commands.command(name="av", aliases=["avatar"])
-    async def get_avatar(self, ctx, name: str):
+    async def get_avatar(self, ctx, *name: str):
         """
         Returns the avatar of a user. Can either specify username without the discriminator
         (less accurate) or username with discriminator (ie Seymour#9035).
@@ -362,6 +362,7 @@ class Commands(commands.Cog, name="Misc. commands"):
             logging.info(f"av requested by {ctx.author} in {guild} with args '{name}'.")
         else:
             logging.info(f"av requested by {ctx.author} in {guild} with no args.")
+        name = " ".join(name)
         try:
             avatar = self.text_utils.get_avatar(self.bot, name)
         except IndexError:
