@@ -2,8 +2,8 @@
 # misc.py
 from ast import Index
 import aiosqlite
-import aiopg
-from psycopg2.extras import DictCursor
+from psycopg.rows import dict_row
+from psycopg_pool import AsyncConnectionPool
 from typing import Dict, List
 import re
 import random
@@ -26,7 +26,7 @@ class TwitterDatabase:
     @classmethod
     async def create(cls, conn: str):
         self = TwitterDatabase()
-        self.conn = await aiopg.create_pool(conn)
+        self.conn = AsyncConnectionPool(conn)
         return self
     
     async def get_unread_tweets(self, username: str) -> List[Dict[str, str]]:
@@ -36,9 +36,9 @@ class TwitterDatabase:
         AND username = %s
         ORDER BY date ASC;
         """
-        async with self.conn.acquire() as db:
-            async with db.cursor(cursor_factory=DictCursor) as cur:
-                await cur.execute(cmd, (username,))
+        async with self.conn.connection() as db:
+            async with db.cursor(row_factory=dict_row) as cur:
+                await cur.execute(cmd, (username,), prepare=True)
                 tweets: list = []
                 async for row in cur:
                     tweet_date = row["date"]
@@ -58,9 +58,9 @@ class TwitterDatabase:
         WHERE username = %s
         AND status_id = %s
         """
-        async with self.conn.acquire() as db:
+        async with self.conn.connection() as db:
             async with db.cursor() as cur:
-                await cur.execute(cmd, (username, tweet_id,))
+                await cur.execute(cmd, (username, tweet_id,), prepare=True)
         return
 
 class Database:

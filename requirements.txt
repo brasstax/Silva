@@ -14,3 +14,5 @@ aiosqlite==0.9.0
 cairosvg
 opencv-contrib-python-headless
 snscrape
+psycopg[binary]>=3.1.0
+psycopg_pool
