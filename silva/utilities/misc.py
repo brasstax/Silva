@@ -2,6 +2,8 @@
 # misc.py
 from ast import Index
 import aiosqlite
+import aiopg
+from psycopg2.extras import DictCursor
 from typing import Dict, List
 import re
 import random
@@ -21,21 +23,24 @@ from PIL import Image, ImageEnhance
 MODEL = "./EDSR_x4.pb"
 
 class TwitterDatabase:
-    def __init__(self, conn: str):
-        self.conn = conn
+    @classmethod
+    async def create(cls, conn: str):
+        self = TwitterDatabase()
+        self.conn = await aiopg.create_pool(conn)
+        return self
     
     async def get_unread_tweets(self, username: str) -> List[Dict[str, str]]:
         cmd: str = """
         SELECT status_id, date from tweets
-        WHERE silva_read = 0
-        AND username = ?
+        WHERE silva_read is false
+        AND username = %s
         ORDER BY date ASC;
         """
-        async with aiosqlite.connect(self.conn) as db:
-            db.row_factory = aiosqlite.Row
-            async with db.execute(cmd, (username,)) as cursor:
+        async with self.conn.acquire() as db:
+            async with db.cursor(cursor_factory=DictCursor) as cur:
+                await cur.execute(cmd, (username,))
                 tweets: list = []
-                async for row in cursor:
+                async for row in cur:
                     tweet_date = row["date"]
                     tweet_id = row["status_id"]
                     tweets.append(
@@ -49,13 +54,13 @@ class TwitterDatabase:
     async def mark_tweet_read(self, username: str, tweet_id: int):
         cmd: str = """
         UPDATE tweets
-        SET silva_read = 1
-        WHERE username = ?
-        AND status_id = ?
+        SET silva_read = true
+        WHERE username = %s
+        AND status_id = %s
         """
-        async with aiosqlite.connect(self.conn) as db:
-            await db.execute(cmd, (username, tweet_id))
-            await db.commit()
+        async with self.conn.acquire() as db:
+            async with db.cursor() as cur:
+                await cur.execute(cmd, (username, tweet_id,))
         return
 
 class Database:

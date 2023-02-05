@@ -21,7 +21,7 @@ intents.members = True
 log_format = "[%(filename)s:%(lineno)s:%(funcName)s() ]%(asctime)s - %(levelname)s - %(message)s"  # noqa
 logging.basicConfig(level=logging.INFO, format=log_format)
 
-config = ConfigParser()
+config = ConfigParser(interpolation=None)
 config.read(config_file)
 
 with open(config["default"]["discord_token"]) as fp:
@@ -34,7 +34,7 @@ bot = commands.Bot(
     case_insensitive=True,
     intents=intents
 )
-bot.conn = "aliases.sqlite3"
+bot.aliases_conn = "aliases.sqlite3"
 bot.events_channel = config["twitter"]["discord_news_feed_channel_id"]
 
 setattr(bot, "events_channel", int(config["twitter"]["discord_events_channel_id"]))
@@ -46,14 +46,10 @@ bot.add_cog(Misc.Commands(bot))
 bot.add_cog(Aliases.Commands(bot))
 bot.add_cog(Pronouns.Commands(bot))
 
-twitter_config = ConfigParser()
-twitter_config.read(config["default"]["twitter_tokens"])
-
-
 @bot.event
 async def on_connect():
     bot.COMMAND_PREFIX = COMMAND_PREFIX
-    async with aiosqlite.connect(bot.conn) as db:
+    async with aiosqlite.connect(bot.aliases_conn) as db:
         db.row_factory = aiosqlite.Row
         cmd: str = (
             "CREATE TABLE IF NOT EXISTS aliases"
@@ -105,7 +101,10 @@ async def on_ready():
         bot=bot,
         discord_channel_id=config["twitter"]["discord_news_feed_channel_id"],
         twitter_usernames=to_follow,
-        twitter_database=config["twitter"]["twitter_database"]
+        twitter_database_db=config["database"]["database"],
+        twitter_database_host=config["database"]["host"],
+        twitter_database_username=config["database"]["username"],
+        twitter_database_password=config["database"]["password"]
     )
     await bot.twitter.follow()
 
@@ -128,6 +127,7 @@ try:
     loop.run_until_complete(bot.connect())
 except KeyboardInterrupt:
     logging.info("Logging out. (You might need to ctrl-C twice.)")
+    loop.run_until_complete(bot.twitter.client.conn.close())
     loop.run_until_complete(bot.logout())
 finally:
     loop.close()

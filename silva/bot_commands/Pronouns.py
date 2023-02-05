@@ -7,7 +7,7 @@ from silva.utilities import misc
 class Commands(commands.Cog, name="Pronoun commands"):
     def __init__(self, bot):
         self.bot = bot
-        self.db_utils = misc.Database(bot.conn)
+        self.db_utils = misc.Database(bot.aliases_conn)
         self.text_utils = misc.TextUtils()
         logging.info("Pronoun commands initialized.")
 
