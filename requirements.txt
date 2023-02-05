@@ -13,3 +13,4 @@ aiodns==2.0.0
 aiosqlite==0.9.0
 cairosvg
 opencv-contrib-python-headless
+snscrape
