@@ -7,6 +7,8 @@ which snscrape > /dev/null
 [[ $? -ne 0 ]] && echo "SNScrape not installed." && exit 1;
 which psql > /dev/null
 [[ $? -ne 0 ]] && echo "psql not installed." && exit 1;
+which jq > /dev/null
+[[ $? -ne 0 ]] && echo "jq not installed." && exit 1;
 [[ -z ${SNSCRAPE_TWITTER_USERS} ]]  && echo "SNSCRAPE_TWITTER_USERS not set. Set SNSCRAPE_TWITTER_USERS with user handles you want to scrape, separated by comma." && exit 1;
 [[ -z ${SNSCRAPE_DATABASE_DB} ]]  && echo "SNSCRAPE_DATABASE_DB not set. Set the name for a postgres database that scraper.sh will use." && exit 1;
 [[ -z ${SNSCRAPE_DATABASE_HOST} ]] && echo "SNSCRAPE_DATABASE_HOST not set. Set the host for a postgres host that scraper.sh will use." && exit 1;
