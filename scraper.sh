@@ -22,7 +22,6 @@ while true; do
       echo ${url_breakout[-1]}
       status_id=${url_breakout[-1]}
       date=$(echo $tweet | jq '.["date"]')
-      echo $username $status_id $date
       sqlite3 -batch $SNSCRAPE_DATABASE "INSERT OR IGNORE INTO tweets(username, status_id, date, silva_read) VALUES ($username, $status_id, $date, 0)"
     done
   done

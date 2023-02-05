@@ -100,16 +100,12 @@ async def on_ready():
     logging.info("------")
     activity = discord.Game(name=f"{COMMAND_PREFIX}help for help")
     await bot.change_presence(status=discord.Status.online, activity=activity)
-    to_follow_str = config["twitter"]["twitter_user_id"].split(",")
-    to_follow = [int(item) for item in to_follow_str]
+    to_follow = config["twitter"]["twitter_usernames"].split(",")
     bot.twitter = granblue_twitter.Twitter(
         bot=bot,
-        consumer=twitter_config["default"]["api"],
-        consumer_secret=twitter_config["default"]["api_secret"],
-        access=twitter_config["default"]["access_token"],
-        access_secret=twitter_config["default"]["access_token_secret"],
         discord_channel_id=config["twitter"]["discord_news_feed_channel_id"],
-        twitter_user_id=to_follow,
+        twitter_usernames=to_follow,
+        twitter_database=config["twitter"]["twitter_database"]
     )
     await bot.twitter.follow()
 
@@ -134,5 +130,4 @@ except KeyboardInterrupt:
     logging.info("Logging out. (You might need to ctrl-C twice.)")
     loop.run_until_complete(bot.logout())
 finally:
-    loop.run_until_complete(bot.twitter.client.close())
     loop.close()

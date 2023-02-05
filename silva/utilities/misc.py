@@ -20,6 +20,44 @@ from PIL import Image, ImageEnhance
 # EDSR from: https://github.com/Saafke/EDSR_Tensorflow/blob/master/models/EDSR_x4.pb
 MODEL = "./EDSR_x4.pb"
 
+class TwitterDatabase:
+    def __init__(self, conn: str):
+        self.conn = conn
+    
+    async def get_unread_tweets(self, username: str) -> List[Dict[str, str]]:
+        cmd: str = """
+        SELECT status_id, date from tweets
+        WHERE silva_read = 0
+        AND username = ?
+        ORDER BY date ASC;
+        """
+        async with aiosqlite.connect(self.conn) as db:
+            db.row_factory = aiosqlite.Row
+            async with db.execute(cmd, (username,)) as cursor:
+                tweets: list = []
+                async for row in cursor:
+                    tweet_date = row["date"]
+                    tweet_id = row["status_id"]
+                    tweets.append(
+                        {
+                            "tweet_date": tweet_date,
+                            "tweet_id": tweet_id
+                        }
+                    )
+        return tweets
+    
+    async def mark_tweet_read(self, username: str, tweet_id: int):
+        cmd: str = """
+        UPDATE tweets
+        SET silva_read = 1
+        WHERE username = ?
+        AND status_id = ?
+        """
+        async with aiosqlite.connect(self.conn) as db:
+            await db.execute(cmd, (username, tweet_id))
+            await db.commit()
+        return
+
 class Database:
     def __init__(self, conn: str):
         self.conn = conn
