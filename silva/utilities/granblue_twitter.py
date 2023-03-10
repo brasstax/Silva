@@ -4,6 +4,7 @@
 # @Granblue_en.
 
 import logging
+import asyncio
 from silva.utilities.misc import TwitterDatabase
 
 
@@ -38,5 +39,9 @@ class Twitter(object):
                         logging.info(f"@{username}: {sid}")
                         url = f"https://fxtwitter.com/{username}/status/{sid}"
                         logging.info(url)
-                        await channel.send(url)
+                        if not await self.client.check_muted_user(username):
+                            await channel.send(url)
+                        else:
+                            logging.info(f"Ignoring {username}")
                         await self.client.mark_tweet_read(username, sid)
+                await asyncio.sleep(5)

@@ -62,6 +62,51 @@ class TwitterDatabase:
             async with db.cursor() as cur:
                 await cur.execute(cmd, (username, tweet_id,), prepare=True)
         return
+    
+    async def check_muted_user(self, username: str):
+        """
+        Check if a username is ignored.
+        """
+        cmd: str = """
+        SELECT username FROM muted_users
+        WHERE username = %s
+        """
+        async with self.conn.connection() as db:
+            async with db.cursor() as cur:
+                await cur.execute(cmd, (username,), prepare=True)
+                res = await cur.fetchone()
+        
+        if res:
+            return True
+        return False
+    
+    async def mute_twitter_user(self, username: str):
+        """
+        Mutes a twitter username.
+        """
+        cmd: str = """
+        INSERT INTO muted_users (username)
+        VALUES (%s)
+        ON CONFLICT username DO NOTHING;
+        """
+        async with self.conn.connection() as db:
+            async with db.cursor() as cur:
+                await cur.execute(cmd, (username,))
+        return
+
+    async def unmute_twitter_user(self, username: str):
+        """
+        Unmutes a twitter username.
+        """
+        cmd: str = """
+        DELETE FROM muted_users
+        WHERE username = %s;
+        """
+        async with self.conn.connection() as db:
+            async with db.cursor() as cur:
+                await cur.execute(cmd, (username,))
+        return
+
 
 class Database:
     def __init__(self, conn: str):
