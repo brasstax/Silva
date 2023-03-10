@@ -17,10 +17,12 @@ which jq > /dev/null
 echo "Initializing SNScrape for twitter accounts ${SNSCRAPE_TWITTER_USERS}."
 echo "SELECT 'CREATE DATABASE ${SNSCRAPE_DATABASE_DB}' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = '${SNSCRAPE_DATABASE_DB}')\gexec" | psql "user=$SNSCRAPE_DATABASE_USERNAME password=$SNSCRAPE_DATABASE_PASSWORD host=$SNSCRAPE_DATABASE_HOST" 
 psql "user=$SNSCRAPE_DATABASE_USERNAME password=$SNSCRAPE_DATABASE_PASSWORD host=$SNSCRAPE_DATABASE_HOST dbname=$SNSCRAPE_DATABASE_DB" -c "CREATE TABLE IF NOT EXISTS tweets (username TEXT, status_id BIGINT, date TIMESTAMP WITH TIME ZONE, silva_read BOOLEAN, CONSTRAINT username_status_id UNIQUE (username, status_id))" > /dev/null
+psql "user=$SNSCRAPE_DATABASE_USERNAME password=$SNSCRAPE_DATABASE_PASSWORD host=$SNSCRAPE_DATABASE_HOST dbname=$SNSCRAPE_DATABASE_DB" -c "CREATE TABLE IF NOT EXISTS muted_hashtags (id SERIAL PRIMARY KEY, hashtag TEXT)" > /dev/null
 IFS=',' read -ra USERS <<< $SNSCRAPE_TWITTER_USERS
 echo "Now scraping. Press Ctrl-C to exit."
 while true; do
   for user in "${USERS[@]}"; do
+    echo "Scraping $user"
     IFS=' ' mapfile -t tweets < <(snscrape -n 10 --retry 3 --jsonl twitter-user $user)
     for tweet in "${tweets[@]}"; do
       username=$(echo $tweet | jq -r '.["user"]["username"]')
@@ -31,4 +33,5 @@ while true; do
       psql "user=$SNSCRAPE_DATABASE_USERNAME password=$SNSCRAPE_DATABASE_PASSWORD host=$SNSCRAPE_DATABASE_HOST dbname=$SNSCRAPE_DATABASE_DB" -c "INSERT INTO tweets(username, status_id, date, silva_read) VALUES ('$username', $status_id, '$date', false) ON CONFLICT (username, status_id) DO NOTHING" > /dev/null
     done
   done
+  sleep 2
 done
