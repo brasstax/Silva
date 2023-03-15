@@ -1,10 +1,14 @@
 # Silva
 A Discord bot primarily used for a personal project.
-Uses `py-cord` (thanks for your work on discord.py, Rapptz.)
+Uses `discord.py`.
 Has various Granblue Fantasy-related commands.
 
 # Installation
 `pip install -r requirements.txt`
+
+# Requirements
+You'll need a Postgres server set up for the twitter integration. It can just be a fresh postgres instance.
+You'll also need `jq`.
 
 # Configuration
 Create a `secrets` folder and the following files within it:
@@ -12,16 +16,21 @@ Create a `secrets` folder and the following files within it:
 `twitter.ini`
 
 Populate `discord_token.txt` with your Discord bot token.
-Populate `twitter.ini` with the following values:
-```
-[default]
-access_token=
-access_token_secret=
-api=
-api_secret=
-```
 
 # Usage
+## Twitter window
+export these environment variables:
+
+```
+SNSCRAPE_TWITTER_USERS
+SNSCRAPE_DATABASE_DB
+SNSCRAPE_DATABASE_HOST
+SNSCRAPE_DATABASE_USERNAME
+SNSCRAPE_DATABASE_PASSWORD
+```
+Then run `scraper.sh`.
+
+## Bot window
 `./runbot.sh config.ini`
 
 # Logging
