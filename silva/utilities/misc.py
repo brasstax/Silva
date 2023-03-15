@@ -2,6 +2,8 @@
 # misc.py
 from ast import Index
 import aiosqlite
+from psycopg.rows import dict_row
+from psycopg_pool import AsyncConnectionPool
 from typing import Dict, List
 import re
 import random
@@ -19,6 +21,92 @@ from PIL import Image, ImageEnhance
 
 # EDSR from: https://github.com/Saafke/EDSR_Tensorflow/blob/master/models/EDSR_x4.pb
 MODEL = "./EDSR_x4.pb"
+
+class TwitterDatabase:
+    @classmethod
+    async def create(cls, conn: str):
+        self = TwitterDatabase()
+        self.conn = AsyncConnectionPool(conn)
+        return self
+    
+    async def get_unread_tweets(self, username: str) -> List[Dict[str, str]]:
+        cmd: str = """
+        SELECT status_id, date from tweets
+        WHERE silva_read is false
+        AND username = %s
+        ORDER BY date ASC;
+        """
+        async with self.conn.connection() as db:
+            async with db.cursor(row_factory=dict_row) as cur:
+                await cur.execute(cmd, (username,), prepare=True)
+                tweets: list = []
+                async for row in cur:
+                    tweet_date = row["date"]
+                    tweet_id = row["status_id"]
+                    tweets.append(
+                        {
+                            "tweet_date": tweet_date,
+                            "tweet_id": tweet_id
+                        }
+                    )
+        return tweets
+    
+    async def mark_tweet_read(self, username: str, tweet_id: int):
+        cmd: str = """
+        UPDATE tweets
+        SET silva_read = true
+        WHERE username = %s
+        AND status_id = %s
+        """
+        async with self.conn.connection() as db:
+            async with db.cursor() as cur:
+                await cur.execute(cmd, (username, tweet_id,), prepare=True)
+        return
+    
+    async def check_muted_user(self, username: str):
+        """
+        Check if a username is ignored.
+        """
+        cmd: str = """
+        SELECT username FROM muted_users
+        WHERE username = %s
+        """
+        async with self.conn.connection() as db:
+            async with db.cursor() as cur:
+                await cur.execute(cmd, (username,), prepare=True)
+                res = await cur.fetchone()
+        
+        if res:
+            return True
+        return False
+    
+    async def mute_twitter_user(self, username: str):
+        """
+        Mutes a twitter username.
+        """
+        cmd: str = """
+        INSERT INTO muted_users (username)
+        VALUES (%s)
+        ON CONFLICT username DO NOTHING;
+        """
+        async with self.conn.connection() as db:
+            async with db.cursor() as cur:
+                await cur.execute(cmd, (username,))
+        return
+
+    async def unmute_twitter_user(self, username: str):
+        """
+        Unmutes a twitter username.
+        """
+        cmd: str = """
+        DELETE FROM muted_users
+        WHERE username = %s;
+        """
+        async with self.conn.connection() as db:
+            async with db.cursor() as cur:
+                await cur.execute(cmd, (username,))
+        return
+
 
 class Database:
     def __init__(self, conn: str):

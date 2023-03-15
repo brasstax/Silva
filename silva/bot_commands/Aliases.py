@@ -6,7 +6,7 @@ from silva.utilities import misc
 class Commands(commands.Cog, name="Alias commands"):
     def __init__(self, bot):
         self.bot = bot
-        self.db_utils = misc.Database(bot.conn)
+        self.db_utils = misc.Database(bot.aliases_conn)
         logging.info("Alias commands initialized.")
 
     @commands.command(name="alias", aliases=["aliases"])

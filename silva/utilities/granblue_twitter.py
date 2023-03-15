@@ -3,47 +3,45 @@
 # A collection of utilities to get tweet information from
 # @Granblue_en.
 
-import peony
 import logging
+import asyncio
+from silva.utilities.misc import TwitterDatabase
 
 
 class Twitter(object):
     def __init__(
         self,
         bot,
-        consumer: str,
-        consumer_secret: str,
-        access: str,
-        access_secret: str,
         discord_channel_id: int,
-        twitter_user_id,
+        twitter_database_db: str,
+        twitter_database_host: str,
+        twitter_database_username: str,
+        twitter_database_password: str,
+        twitter_usernames: str
     ):
-        self.client = peony.PeonyClient(
-            consumer_key=consumer,
-            consumer_secret=consumer_secret,
-            access_token=access,
-            access_token_secret=access_secret,
-        )
         self.bot = bot
         self.channel_id = int(discord_channel_id)
-        self.follow_id = twitter_user_id
+        self.twitter_connection = f"user={twitter_database_username} password={twitter_database_password} dbname={twitter_database_db} host={twitter_database_host}"
+        self.twitter_usernames = twitter_usernames
+        self.client = None
 
     async def follow(self):
         if not self.bot.is_following:
             self.bot.is_following = True
-            client = self.client
-            await client.user
+            self.client = await TwitterDatabase.create(self.twitter_connection)
             bot = self.bot
             channel = bot.get_channel(self.channel_id)
-            req = client.stream.statuses.filter.post(follow=self.follow_id)
-            async with req as stream:
-                async for tweet in stream:
-                    if peony.events.tweet(tweet):
-                        sid = tweet.id
-                        username = tweet.user.screen_name
-                        user_id = tweet.user.id
-                        if user_id in self.follow_id:
-                            logging.info(f"@{username}: {tweet.text}")
-                            url = f"https://fxtwitter.com/{username}/status/{sid}"
-                            logging.info(url)
+            while True:
+                for username in self.twitter_usernames:
+                    tweets = await self.client.get_unread_tweets(username)
+                    for tweet in tweets:
+                        sid = tweet["tweet_id"]
+                        logging.info(f"@{username}: {sid}")
+                        url = f"https://fxtwitter.com/{username}/status/{sid}"
+                        logging.info(url)
+                        if not await self.client.check_muted_user(username):
                             await channel.send(url)
+                        else:
+                            logging.info(f"Ignoring {username}")
+                        await self.client.mark_tweet_read(username, sid)
+                await asyncio.sleep(5)

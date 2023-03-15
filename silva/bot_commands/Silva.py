@@ -11,7 +11,7 @@ import pytz
 class Commands(commands.Cog, name="GBF-related commands"):
     def __init__(self, bot):
         self.bot = bot
-        self.db_utils = misc.Database(bot.conn)
+        self.db_utils = misc.Database(bot.aliases_conn)
         self.text_utils = misc.TextUtils()
         logging.info("Silva commands initialized.")
 
@@ -158,7 +158,7 @@ class Commands(commands.Cog, name="GBF-related commands"):
                 )
                 logging.info(f"Status from server: {status} {text}")
             else:
-                new_text = await text_utils.regex(bot.conn, text)
+                new_text = await text_utils.regex(bot.aliases_conn, text)
             await ctx.send(new_text)
             guild = ctx.guild if ctx.guild else "a direct message"
             logging.info(f"song requested by {ctx.author} in {guild}.")
