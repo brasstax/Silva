@@ -1,7 +1,7 @@
 aiohttp==3.7.4
 async-timeout==3.0.1
 chardet==3.0.4
-py-cord==1.7.3
+py-cord==2.6.1
 multidict==4.5.2
 websockets==9.1
 configparser==3.7.1
