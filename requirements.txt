@@ -6,7 +6,7 @@ multidict==4.5.2
 websockets==9.1
 configparser==3.7.1
 beautifulsoup4==4.7.1
-pytz==2018.9
+pytz==2024.2
 argparse==1.4.0
 aiopg
 aiodns==2.0.0
